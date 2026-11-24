@@ -225,5 +225,5 @@ if [[ -n "$APP_PASSWORD" ]]; then
 else
   echo "    Sito senza password (APP_PASSWORD vuota)"
 fi
-echo "    Aggiornare all'ultima versione:  pct exec $CTID -- psb-update"
+echo "    Aggiornare all'ultima versione:  pct exec $CTID -- /usr/local/bin/psb-update"
 echo "    Log del sito:  pct exec $CTID -- journalctl -u povero-senza-biga -f"

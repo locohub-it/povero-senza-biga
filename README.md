@@ -103,7 +103,7 @@ Alla fine stampa l'indirizzo del sito, la password di root del container (genera
 | `APP_PASSWORD` | vuota | password del sito; vuota = nessun login |
 | `APP_PORT` | `8000` | porta del sito |
 
-Comandi utili dall'host: `pct enter <CTID>` (shell), `pct exec <CTID> -- psb-update` (aggiorna all'ultima versione), `pct exec <CTID> -- journalctl -u povero-senza-biga -f` (log).
+Comandi utili dall'host: `pct enter <CTID>` (shell), `pct exec <CTID> -- /usr/local/bin/psb-update` (aggiorna all'ultima versione), `pct exec <CTID> -- journalctl -u povero-senza-biga -f` (log).
 
 ## Proxmox: VM con Docker (richiede KVM)
 
