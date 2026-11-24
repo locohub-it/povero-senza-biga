@@ -391,19 +391,27 @@ function itineraryList(title, items, thr, data, guests) {
   const sec = h('section');
   const list = h('div', { class: 'list' });
   const bar = h('div', { class: 'sort' }, 'Ordina:');
-  let cur = 'price';
+  const heading = h('h2');
+  const dayChip = h('button', { type: 'button', class: 'day-chip', hidden: true, title: 'Mostra tutte le date' });
+  let cur = 'price', day = null;
   const draw = () => {
     list.replaceChildren();
-    if (!items.length) { list.append(h('div', { class: 'empty-state' }, 'Nessun volo trovato con questi filtri.')); return; }
+    const shown = day ? items.filter(it => dateOf(it.departure) === day) : items;
+    heading.textContent = `${title} (${shown.length})`;
+    dayChip.hidden = !day;
+    if (day) dayChip.textContent = `Solo ${fmtDate(day)} ×`;
+    if (!shown.length) { list.append(h('div', { class: 'empty-state' }, 'Nessun volo trovato con questi filtri.')); return; }
     const fn = SORTS.find(s => s[0] === cur)[2];
-    items.slice().sort(fn).forEach(it => list.append(itineraryRow(it, thr, data, guests)));
+    shown.slice().sort(fn).forEach(it => list.append(itineraryRow(it, thr, data, guests)));
   };
+  dayChip.addEventListener('click', () => { day = null; draw(); if (sec.onDay) sec.onDay(null); });
+  sec.setDay = d => { day = d; draw(); };
   SORTS.forEach(([k, label]) => {
     const b = h('button', { type: 'button', class: k === cur ? 'on' : '' }, label);
     b.addEventListener('click', () => { cur = k; bar.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); draw(); });
     bar.append(b);
   });
-  sec.append(h('div', { class: 'sec-head' }, h('h2', null, `${title} (${items.length})`), bar), list);
+  sec.append(h('div', { class: 'sec-head' }, h('div', { class: 'sec-title-row' }, heading, dayChip), bar), list);
   draw();
   return sec;
 }
@@ -439,7 +447,10 @@ function renderCombos(data, thrO, thrI) {
         comboLeg('Andata', o, thrO, data), comboLeg('Ritorno', i, thrI, data),
         h('div', { class: 'clinks' },
           o.booking_url ? h('a', { class: 'btn', href: o.booking_url, target: '_blank', rel: 'noopener noreferrer' }, 'Prenota andata') : null,
-          i.booking_url ? h('a', { class: 'btn', href: i.booking_url, target: '_blank', rel: 'noopener noreferrer' }, 'Prenota ritorno') : null)));
+          i.booking_url ? h('a', { class: 'btn', href: i.booking_url, target: '_blank', rel: 'noopener noreferrer' }, 'Prenota ritorno') : null),
+        (c.roundtrip_links && c.roundtrip_links.length) ? h('div', { class: 'clinks rt' },
+          h('span', { class: 'rt-label', text: c.same_airline ? 'Stessa compagnia, stessi aeroporti: puoi prenotare insieme' : 'Stessi aeroporti: confronta il prezzo A/R' }),
+          c.roundtrip_links.map(l => h('a', { class: 'btn fill', href: l.url, target: '_blank', rel: 'noopener noreferrer' }, l.label))) : null));
     });
     more.hidden = combos.length <= shown;
     more.textContent = `Mostra tutte le ${combos.length} combinazioni`;
@@ -447,6 +458,48 @@ function renderCombos(data, thrO, thrI) {
   more.addEventListener('click', () => { shown = combos.length; draw(); });
   draw();
   sec.append(grid, more);
+  return sec;
+}
+
+/* ---------- prezzi per giorno ---------- */
+function priceStrip(tag, days, onPick) {
+  const prices = days.map(d => d.price).filter(p => p != null);
+  const max = Math.max(...prices, 1), min = Math.min(...prices);
+  const row = h('div', { class: 'pstrip', role: 'group', 'aria-label': `Prezzi per giorno, ${tag}` });
+  let sel = null;
+  const cols = days.map(d => {
+    const has = d.price != null;
+    const pct = has ? Math.max(8, Math.round((d.price / max) * 100)) : 0;
+    const b = h('button', {
+      type: 'button', class: 'pday' + (has && d.price === min ? ' best' : '') + (has ? '' : ' none'), disabled: !has,
+      title: has ? `${fmtDate(d.date)}: da ${money(d.price)} (${d.route}, ${d.airline}) · ${d.count} voli` : `${fmtDate(d.date)}: nessun volo`,
+    },
+      h('span', { class: 'pval', text: has ? money(d.price) : '—' }),
+      h('span', { class: 'pbar-wrap' }, h('span', { class: 'pbar', style: `height:${pct}%` })),
+      h('span', { class: 'pdate', text: fmtDate(d.date) }));
+    b.addEventListener('click', () => { sel = sel === d.date ? null : d.date; mark(); onPick(sel); });
+    return [d.date, b];
+  });
+  const mark = () => cols.forEach(([dt, b]) => b.classList.toggle('on', dt === sel));
+  row.setSel = d => { sel = d; mark(); };
+  cols.forEach(([, b]) => row.append(b));
+  return h('div', { class: 'pstrip-box' }, h('div', { class: 'ptag', text: tag }), row);
+}
+
+function renderCalendar(data, lists) {
+  const cal = data.calendar || {};
+  const out = cal.outbound || [], inn = cal.inbound || [];
+  if (out.length < 2 && inn.length < 2) return null;
+  const sec = h('section', { class: 'calendar' },
+    h('div', { class: 'sec-head' }, h('h2', null, 'Prezzi per giorno')),
+    h('p', { class: 'hint', text: 'Prezzo più basso per ogni data, tra tutti gli aeroporti scelti. Tocca un giorno per vedere solo i voli di quella data.' }));
+  const pairs = [['Andata', out, lists.outbound], ['Ritorno', inn, lists.inbound]];
+  pairs.forEach(([tag, days, list]) => {
+    if (days.length < 2 || !list) return;
+    const strip = priceStrip(tag, days, d => list.setDay(d));
+    list.onDay = d => strip.querySelector('.pstrip').setSel(d);
+    sec.append(strip);
+  });
   return sec;
 }
 
@@ -509,9 +562,14 @@ function renderResults(data, req) {
     data.errors.forEach(e => ul.append(h('li', { text: `${e.origin} → ${e.destination} (${fmtDate(e.date)}): ${e.error}` })));
     root.append(h('div', { class: 'msg warn' }, `Alcune ricerche sono fallite (${data.errors.length}); i risultati potrebbero essere incompleti:`, ul));
   }
+  const listOut = itineraryList('Andata', data.outbound, thrO, data, req.adults);
+  const listIn = round ? itineraryList('Ritorno', data.inbound, thrI, data, req.adults) : null;
   if (round) root.append(renderCombos(data, thrO, thrI));
-  root.append(itineraryList('Andata', data.outbound, thrO, data, req.adults));
-  if (round) root.append(itineraryList('Ritorno', data.inbound, thrI, data, req.adults));
+  const calendar = renderCalendar(data, { outbound: listOut, inbound: listIn });
+  if (calendar) root.append(calendar);
+  else if (!req.flex_days) root.append(h('p', { class: 'hint', text: 'Suggerimento: imposta la flessibilità a ± 1–3 giorni per vedere il grafico dei prezzi per giorno.' }));
+  root.append(listOut);
+  if (listIn) root.append(listIn);
 
   // alloggi per ogni destinazione
   const stays = h('section', { class: 'stays' }, h('div', { class: 'sec-head' }, h('h2', null, 'Dove dormire')));

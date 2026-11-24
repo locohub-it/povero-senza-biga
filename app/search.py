@@ -12,6 +12,7 @@ from .cache import TTLCache
 from .config import settings
 from .filters import FlightFilters
 from .flights import FlightSearchError, GoogleHints, Itinerary, search_one_way, shift_date
+from .roundtrip import roundtrip_links, same_carrier
 
 _cache = TTLCache(settings.cache_ttl_seconds)
 
@@ -112,7 +113,7 @@ def _dedupe(items: list[Itinerary]) -> list[Itinerary]:
 
 
 def build_combos(outbound: list[Itinerary], inbound: list[Itinerary], min_gap_hours: int,
-                 limit: int, pool: int = 40) -> list[dict]:
+                 limit: int, pool: int = 40, adults: int = 1) -> list[dict]:
     """Abbina andate e ritorni compatibili e restituisce le combinazioni più economiche."""
     outs = [o for o in outbound if o.price is not None][:pool]
     ins = [i for i in inbound if i.price is not None][:pool]
@@ -132,7 +133,38 @@ def build_combos(outbound: list[Itinerary], inbound: list[Itinerary], min_gap_ho
                 "same_airports": o.origin == i.destination and o.destination == i.origin,
             })
     combos.sort(key=lambda c: c["total"])
-    return combos[:limit]
+    top = combos[:limit]
+    by_out = {o.key: o for o in outs}
+    by_in = {i.key: i for i in ins}
+    for c in top:
+        o, i = by_out[c["outbound"]], by_in[c["inbound"]]
+        c["same_airline"] = same_carrier(o, i) is not None
+        c["roundtrip_links"] = roundtrip_links(o, i, adults)
+    return top
+
+
+def price_calendar(items: list[Itinerary], dates: list[str]) -> list[dict]:
+    """Prezzo minimo per giorno di partenza (tra tutti gli aeroporti), per il grafico delle date."""
+    best: dict[str, Itinerary] = {}
+    count: dict[str, int] = {}
+    for it in items:
+        if it.price is None:
+            continue
+        d = it.departure[:10]
+        count[d] = count.get(d, 0) + 1
+        if d not in best or it.price < best[d].price:
+            best[d] = it
+    out = []
+    for d in dates:
+        b = best.get(d)
+        out.append({
+            "date": d,
+            "price": b.price if b else None,
+            "route": f"{b.origin}-{b.destination}" if b else None,
+            "airline": ", ".join(b.airlines) if b else None,
+            "count": count.get(d, 0),
+        })
+    return out
 
 
 async def run_search(req: SearchRequest, search_fn: SearchFn = search_one_way) -> dict:
@@ -165,7 +197,12 @@ async def run_search(req: SearchRequest, search_fn: SearchFn = search_one_way) -
     outbound = sorted((i for i in _dedupe(out_raw) if req.outbound_filters.accepts(i)), key=_sort_key)
     inbound = sorted((i for i in _dedupe(in_raw) if req.inbound_filters.accepts(i)), key=_sort_key)
 
-    combos = build_combos(outbound, inbound, req.min_hours_at_destination, req.max_combos) if in_legs else []
+    combos = (build_combos(outbound, inbound, req.min_hours_at_destination, req.max_combos, adults=req.adults)
+              if in_legs else [])
+    calendar = {
+        "outbound": price_calendar(outbound, _dates(req.depart_date, flex)),
+        "inbound": price_calendar(inbound, _dates(req.return_date, flex)) if req.return_date else [],
+    }
 
     # Le combinazioni possono riferirsi a voli oltre il limite di visualizzazione: includili.
     out_show = outbound[: req.max_results]
@@ -184,6 +221,7 @@ async def run_search(req: SearchRequest, search_fn: SearchFn = search_one_way) -
         "outbound": [i.to_dict() for i in out_show],
         "inbound": [i.to_dict() for i in in_show],
         "combos": combos,
+        "calendar": calendar,
         "errors": out_err + in_err,
         "stats": {
             "queries": total,
