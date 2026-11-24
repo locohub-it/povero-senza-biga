@@ -978,8 +978,21 @@ function priceStrip(tag, days, onPick) {
 
 /* ---------- alloggi ---------- */
 function getBudget() { const b = Number(LS.get('psb_budget', 40)); return b >= 1 ? b : 40; }
+function hotelCard(x, nights) {
+  const meta = [x.type, x.rating ? `★ ${String(x.rating).replace('.', ',')}${x.reviews ? ` (${x.reviews})` : ''}` : null].filter(Boolean).join(' · ');
+  return h('a', { class: 'hotel', href: x.url, target: '_blank', rel: 'noopener noreferrer', title: x.description || x.name },
+    x.image ? h('img', { src: x.image, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }) : h('span', { class: 'hotel-noimg', 'aria-hidden': 'true' }, '🛏'),
+    h('span', { class: 'hotel-body' },
+      h('b', { class: 'hotel-name', text: x.name }),
+      meta ? h('span', { class: 'hotel-meta', text: meta }) : null),
+    h('span', { class: 'hotel-price' },
+      h('strong', { text: money(x.price) }), h('small', { text: 'a notte' }),
+      x.total ? h('small', { text: `${money(x.total)} per ${nights} ${nights === 1 ? 'notte' : 'notti'}` }) : null));
+}
+
 function stayPanel({ city, country, checkin, checkout, guests, inner, title }) {
   const box = h('div', { class: 'stay-links' });
+  const hotels = h('div', { class: 'hotels' });
   const budget = h('input', { type: 'number', min: 1, max: 1000, value: getBudget(), inputmode: 'numeric', 'aria-label': 'Budget per notte' });
   const nights = Math.max(1, dayNum(checkout) - dayNum(checkin));
   const panel = h('div', { class: 'stay-panel' + (inner ? ' inner' : '') },
@@ -987,8 +1000,40 @@ function stayPanel({ city, country, checkin, checkout, guests, inner, title }) {
       h('strong', null, title || `Dove dormire a ${city}`),
       h('label', { class: 'bud' }, 'Budget a notte', budget, currency)),
     h('div', { class: 'hint', text: `${fmtDate(checkin)} → ${fmtDate(checkout)} · ${nights} ${nights === 1 ? 'notte' : 'notti'} · ${guests} ${guests === 1 ? 'ospite' : 'ospiti'}` }),
+    hotels,
+    h('div', { class: 'stay-more', text: 'Cerca anche su:' }),
     box);
   let seq = 0;
+  // prezzi reali da Google Hotels: caricati una volta, filtrati per budget qui
+  let hotelData = null, showAll = false;
+  function renderHotels() {
+    hotels.replaceChildren();
+    if (hotelData === null) { hotels.append(h('span', { class: 'hint', text: 'Cerco i prezzi degli alloggi…' })); return; }
+    if (hotelData.error) { hotels.append(h('span', { class: 'hint', text: 'Prezzi degli alloggi non disponibili: ' + hotelData.error })); return; }
+    const all = hotelData.items || [];
+    if (!all.length) { hotels.append(h('span', { class: 'hint', text: 'Nessun prezzo trovato per queste date.' })); return; }
+    const max = parseInt(budget.value, 10) || 40;
+    const within = all.filter(x => x.price <= max);
+    let list = within.length ? within : all.slice(0, 3);
+    if (within.length === 0) hotels.append(h('p', { class: 'hint', text: `Nessuna struttura sotto ${money(max)} a notte: ecco le più economiche.` }));
+    const limit = 6;
+    const extra = list.length > limit && !showAll;
+    if (extra) list = list.slice(0, limit);
+    hotels.append(h('div', { class: 'hotel-list' }, list.map(x => hotelCard(x, hotelData.nights || nights))));
+    const foot = h('div', { class: 'hotel-foot' },
+      h('span', { class: 'hint', text: `${within.length} su ${all.length} entro il budget · prezzi Google Hotels, tasse incluse` }));
+    if (extra) foot.append(h('button', { type: 'button', class: 'btn small', onclick: () => { showAll = true; renderHotels(); } }, `Mostra tutte (${within.length})`));
+    if (hotelData.source_url) foot.append(h('a', { class: 'btn small', href: hotelData.source_url, target: '_blank', rel: 'noopener noreferrer' }, 'Apri Google Hotels'));
+    hotels.append(foot);
+  }
+  (async () => {
+    renderHotels();
+    const q = new URLSearchParams({ city, checkin, checkout, guests: String(guests) });
+    if (country) q.set('country', country);
+    try { hotelData = await api('/api/stays/prices?' + q); }
+    catch (e) { hotelData = { error: e.message }; }
+    renderHotels();
+  })();
   async function load() {
     const my = ++seq;
     box.replaceChildren(h('span', { class: 'hint', text: 'Carico…' }));
@@ -1010,7 +1055,7 @@ function stayPanel({ city, country, checkin, checkout, guests, inner, title }) {
     stayRefreshers.forEach(r => r(v, panel));
   }, 500);
   budget.addEventListener('input', onBudget);
-  stayRefreshers.push((v, src) => { if (!panel.isConnected) return; if (src !== panel) budget.value = v; load(); });
+  stayRefreshers.push((v, src) => { if (!panel.isConnected) return; if (src !== panel) budget.value = v; load(); renderHotels(); });
   load();
   return panel;
 }

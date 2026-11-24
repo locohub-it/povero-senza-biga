@@ -496,3 +496,19 @@ dialog.confirm p { margin: 0 0 18px; font-size: 1.02rem; font-weight: 600; }
 .date-range { grid-column: span 2; }
 @media (max-width: 719px) { .date-range { grid-column: auto; } }
 @media (max-width: 719px) { .dp-big { width: auto; } .date-range { grid-column: auto; } }
+
+/* ---------- alloggi con prezzi ---------- */
+.hotels { margin-top: 10px; }
+.hotel-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.hotel { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--fg); text-decoration: none; min-width: 0; }
+.hotel:hover { border-color: var(--accent); }
+.hotel img, .hotel-noimg { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; background: var(--field); display: grid; place-items: center; font-size: 1.4rem; }
+.hotel-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hotel-name { font-size: .9rem; line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.hotel-meta { font-size: .75rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hotel-price { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+.hotel-price strong { font-size: 1.05rem; color: var(--good); }
+.hotel-price small { font-size: .7rem; color: var(--muted); white-space: nowrap; }
+.hotel-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.hotel-foot .hint { flex: 1 1 200px; }
+.stay-more { font-size: .78rem; color: var(--muted); margin-top: 12px; }

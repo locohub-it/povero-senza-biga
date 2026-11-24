@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 from . import auth
 from .config import settings
 from .date_prices import DatePricesError, fetch_date_prices
+from .hotel_prices import HotelSearchError, search_stays
 from .filters import FlightFilters, parse_hhmm
 from .search import MAX_TRIP_LEGS, SearchRequest, TooManyQueries, TripLeg, run_search
 from .stays import stay_links
@@ -189,6 +190,23 @@ async def api_date_prices(
 
 
 # ---------- alloggi ----------
+
+@app.get("/api/stays/prices")
+async def api_stay_prices(
+    city: Annotated[str, Query(min_length=1, max_length=80)],
+    checkin: str,
+    checkout: str,
+    guests: int = Query(1, ge=1, le=9),
+    country: str = Query("", max_length=60),
+):
+    try:
+        date.fromisoformat(checkin); date.fromisoformat(checkout)
+        return await asyncio.to_thread(search_stays, city, checkin, checkout, guests, country)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    except HotelSearchError as exc:
+        raise HTTPException(502, f"prezzi degli alloggi non disponibili: {exc}")
+
 
 @app.get("/api/stays")
 def api_stays(
