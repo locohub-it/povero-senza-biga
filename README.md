@@ -1,4 +1,4 @@
-# Povero senza biga
+# Povero e senza biga
 
 Cercavoli per viaggi improvvisati ed extreme low cost: più aeroporti di partenza, più aeroporti di arrivo, andata e ritorno indipendenti.
 
@@ -84,10 +84,14 @@ Sull'host Proxmox, come root:
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/locohub-it/povero-senza-biga/main/scripts/proxmox-create-vm.sh
 less proxmox-create-vm.sh     # leggilo prima di eseguirlo
-APP_PASSWORD='la-tua-password' bash proxmox-create-vm.sh
+SSH_PUBKEY='ssh-ed25519 AAAA... tu@computer' bash proxmox-create-vm.sh
 ```
 
-Se non passi `APP_PASSWORD`, lo script te la chiede o ne genera una e la stampa alla fine. L'installazione richiede 3-6 minuti dopo l'avvio della VM.
+- Senza `APP_PASSWORD` il sito è **aperto, senza login** (va bene in rete di casa). Con `APP_PASSWORD='...'` chiede la password condivisa.
+- `SSH_PUBKEY` è la tua chiave pubblica (contenuto di `~/.ssh/id_ed25519.pub` sul tuo computer) per entrare nella VM con `ssh psb@<ip>`. Se non c'è nessuna chiave, lo script genera una password per l'utente `psb` e la stampa alla fine (vale anche per la console Proxmox).
+- Se qualcosa va storto lo script stampa `ERRORE:` con il comando e la riga che hanno fallito.
+
+L'installazione richiede 3-6 minuti dopo l'avvio della VM.
 
 Principali variabili (tutte opzionali):
 
@@ -106,8 +110,10 @@ Principali variabili (tutte opzionali):
 | `GATEWAY` | vuoto | obbligatorio con IP statico |
 | `DNS` | vuoto | server DNS, es. `1.1.1.1` |
 | `VM_USER` | `psb` | utente della VM |
-| `SSH_KEY_FILE` | vuoto | chiave pubblica da autorizzare (altrimenti cerca in `/root/.ssh`) |
-| `APP_PASSWORD` | vuota | password del sito |
+| `SSH_PUBKEY` | vuoto | chiave pubblica SSH da autorizzare (testo) |
+| `SSH_KEY_FILE` | vuoto | file di chiavi pubbliche da autorizzare (in più cerca in `/root/.ssh`) |
+| `VM_PASSWORD` | vuota | password dell'utente della VM; se vuota e senza chiavi viene generata |
+| `APP_PASSWORD` | vuota | password del sito; vuota = sito senza login |
 | `HOST_PORT` | `8000` | porta esposta dalla VM |
 | `REPO_URL` | questo repository | repository da clonare |
 | `BRANCH` | `main` | branch da clonare |
@@ -117,7 +123,7 @@ Esempio con IP statico:
 
 ```bash
 VMID=210 IP_CIDR=192.168.1.50/24 GATEWAY=192.168.1.1 DNS=1.1.1.1 \
-  APP_PASSWORD='la-tua-password' bash proxmox-create-vm.sh
+  bash proxmox-create-vm.sh
 ```
 
 Dopo l'installazione, nella VM (`ssh psb@<ip>`):

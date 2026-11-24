@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
-# Crea su Proxmox VE una VM Debian 12 (cloud-init) che esegue "Povero senza biga" in Docker.
+# Crea su Proxmox VE una VM Debian 12 (cloud-init) che esegue "Povero e senza biga" in Docker.
 #
 # Da lanciare sull'host Proxmox come root, ad esempio:
 #   curl -fsSLO https://raw.githubusercontent.com/locohub-it/povero-senza-biga/main/scripts/proxmox-create-vm.sh
 #   less proxmox-create-vm.sh          # leggilo prima di eseguirlo
-#   APP_PASSWORD='la-tua-password' bash proxmox-create-vm.sh
+#   bash proxmox-create-vm.sh                                  # sito aperto, senza password
+#   APP_PASSWORD='la-tua-password' bash proxmox-create-vm.sh   # sito con password condivisa
+#
+# Per entrare nella VM via SSH dal tuo computer, passa la tua chiave pubblica
+# (il contenuto di ~/.ssh/id_ed25519.pub del tuo computer):
+#   SSH_PUBKEY='ssh-ed25519 AAAA... tu@mac' bash proxmox-create-vm.sh
 #
 # Tutti i parametri si cambiano con variabili d'ambiente (vedi sotto i valori predefiniti).
 # Esempio con IP statico:
 #   VMID=210 IP_CIDR=192.168.1.50/24 GATEWAY=192.168.1.1 bash proxmox-create-vm.sh
 
 set -euo pipefail
+# Mai più uscite silenziose: se un comando fallisce, dice quale e a che riga.
+trap 'rc=$?; printf "\033[1;31mERRORE:\033[0m comando fallito (codice %s) alla riga %s: %s\n" "$rc" "$LINENO" "$BASH_COMMAND" >&2' ERR
 
 # ---------------- parametri ----------------
 VMID="${VMID:-}"                                  # vuoto = primo ID libero
@@ -26,8 +33,10 @@ IP_CIDR="${IP_CIDR:-dhcp}"                        # "dhcp" oppure es. 192.168.1.
 GATEWAY="${GATEWAY:-}"                            # obbligatorio con IP statico
 DNS="${DNS:-}"                                    # es. "1.1.1.1"
 VM_USER="${VM_USER:-psb}"
-SSH_KEY_FILE="${SSH_KEY_FILE:-}"                  # vuoto = prova /root/.ssh/*.pub e authorized_keys
-APP_PASSWORD="${APP_PASSWORD:-}"                  # vuoto = te la chiedo (o ne genero una)
+SSH_KEY_FILE="${SSH_KEY_FILE:-}"                  # file con chiavi pubbliche da autorizzare
+SSH_PUBKEY="${SSH_PUBKEY:-}"                      # oppure la chiave pubblica direttamente
+VM_PASSWORD="${VM_PASSWORD:-}"                    # password utente VM; vuota e senza chiavi SSH = generata
+APP_PASSWORD="${APP_PASSWORD:-}"                  # vuoto = sito aperto senza password
 HOST_PORT="${HOST_PORT:-8000}"
 REPO_URL="${REPO_URL:-https://github.com/locohub-it/povero-senza-biga.git}"
 BRANCH="${BRANCH:-main}"
@@ -63,10 +72,10 @@ NET0="virtio,bridge=${BRIDGE}"
 [[ -n "$VLAN_TAG" ]] && NET0+=",tag=${VLAN_TAG}"
 
 # ---------------- chiave SSH ----------------
-SSH_KEYS=""
+SSH_KEYS="${SSH_PUBKEY}"$'\n'
 if [[ -n "$SSH_KEY_FILE" ]]; then
   [[ -r "$SSH_KEY_FILE" ]] || die "non riesco a leggere $SSH_KEY_FILE"
-  SSH_KEYS="$(grep -E '^(ssh-|ecdsa-|sk-)' "$SSH_KEY_FILE" || true)"
+  SSH_KEYS+="$(grep -E '^(ssh-|ecdsa-|sk-)' "$SSH_KEY_FILE" || true)"
 else
   for f in /root/.ssh/authorized_keys /root/.ssh/id_ed25519.pub /root/.ssh/id_rsa.pub; do
     if [[ -r "$f" ]]; then
@@ -74,21 +83,24 @@ else
     fi
   done
 fi
-SSH_KEYS="$(printf '%s\n' "$SSH_KEYS" | sed '/^$/d' | sort -u)"
-[[ -n "$SSH_KEYS" ]] || warn "nessuna chiave SSH trovata: potrai entrare solo dalla console Proxmox (utente $VM_USER senza password)"
+SSH_KEYS="$(printf '%s\n' "$SSH_KEYS" | sed '/^[[:space:]]*$/d' | sort -u)"
+
+# Stringa casuale. NON usare "tr </dev/urandom | head": con pipefail il SIGPIPE
+# fa uscire lo script in silenzio (era il bug della prima versione).
+rand() { openssl rand -hex "$1"; }
+
+GENERATED_VM_PASSWORD=0
+if [[ -z "$SSH_KEYS" && -z "$VM_PASSWORD" ]]; then
+  VM_PASSWORD="$(rand 8)"
+  GENERATED_VM_PASSWORD=1
+  warn "nessuna chiave SSH: genero una password per l'utente $VM_USER (la stampo alla fine)"
+fi
 
 # ---------------- password del sito ----------------
-GENERATED_PASSWORD=0
 if [[ -z "$APP_PASSWORD" ]]; then
-  if [[ -t 0 ]]; then
-    read -r -s -p "Password condivisa per il sito (invio = ne genero una): " APP_PASSWORD; echo
-  fi
-  if [[ -z "$APP_PASSWORD" ]]; then
-    APP_PASSWORD="$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 16)"
-    GENERATED_PASSWORD=1
-  fi
+  log "nessuna APP_PASSWORD: il sito sarà aperto a chiunque raggiunga la VM (va bene in rete di casa)"
 fi
-SECRET_KEY="$(tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 48)"
+SECRET_KEY="$(rand 24)"
 
 # ---------------- storage snippets ----------------
 STORAGE_JSON="$(pvesh get "/storage/${SNIPPET_STORAGE}" --output-format json 2>/dev/null)" \
@@ -128,8 +140,13 @@ users:
     groups: [sudo]
     shell: /bin/bash
     sudo: "ALL=(ALL) NOPASSWD:ALL"
-    lock_passwd: true
 EOF
+  if [[ -n "$VM_PASSWORD" ]]; then
+    echo "    lock_passwd: false"
+    printf "    plain_text_passwd: '%s'\n" "${VM_PASSWORD//\'/\'\'}"
+  else
+    echo "    lock_passwd: true"
+  fi
   if [[ -n "$SSH_KEYS" ]]; then
     echo "    ssh_authorized_keys:"
     while IFS= read -r k; do printf '      - %s\n' "$k"; done <<<"$SSH_KEYS"
@@ -172,7 +189,7 @@ runcmd:
   - git clone --branch ${BRANCH} ${REPO_URL} /opt/psb/app
   - ln -sf /opt/psb/.env /opt/psb/app/.env
   - cd /opt/psb/app && docker compose --env-file /opt/psb/.env up -d --build
-final_message: "Povero senza biga pronto dopo \$UPTIME secondi"
+final_message: "Povero e senza biga pronto dopo \$UPTIME secondi"
 EOF
 } >"$SNIPPET_PATH"
 umask 022
@@ -231,8 +248,13 @@ if [[ -n "$VM_IP" ]]; then
 else
   echo "    IP non ancora disponibile: controllalo nel riepilogo della VM in Proxmox."
 fi
-if [[ $GENERATED_PASSWORD -eq 1 ]]; then
-  echo "    Password del sito generata: ${APP_PASSWORD}"
+if [[ -n "$APP_PASSWORD" ]]; then
+  echo "    Il sito chiede la password che hai indicato in APP_PASSWORD"
+else
+  echo "    Sito senza password (APP_PASSWORD vuota)"
+fi
+if [[ $GENERATED_VM_PASSWORD -eq 1 ]]; then
+  echo "    Password utente ${VM_USER} (console Proxmox / SSH): ${VM_PASSWORD}"
 fi
 echo "    Avanzamento installazione: ssh nella VM e 'sudo tail -f /var/log/cloud-init-output.log'"
 echo "    Aggiornare all'ultima versione: ssh nella VM e 'sudo psb-update'"

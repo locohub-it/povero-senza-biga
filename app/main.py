@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 STATIC = ROOT / "static"
 AIRPORTS_FILE = Path(__file__).resolve().parent / "data" / "airports.json"
 
-app = FastAPI(title="Povero senza biga", docs_url=None, redoc_url=None)
+app = FastAPI(title="Povero e senza biga", docs_url=None, redoc_url=None)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.middleware("http")(auth.auth_middleware)
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
@@ -191,9 +191,9 @@ def favicon():
 
 
 LOGIN_PAGE = """<!doctype html><html lang="it"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>Povero senza biga · accesso</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Povero e senza biga · accesso</title>
 <link rel="stylesheet" href="/static/style.css"></head><body class="login">
-<form method="post" action="/login" class="login-box"><h1>Povero senza biga</h1>
+<form method="post" action="/login" class="login-box"><h1>Povero e senza biga</h1>
 <p>Password condivisa</p>{error}<input type="password" name="password" autofocus required>
 <button type="submit">Entra</button></form></body></html>"""
 
