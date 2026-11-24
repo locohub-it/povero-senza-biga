@@ -568,3 +568,30 @@ document.addEventListener('DOMContentLoaded', init);
 document.addEventListener('DOMContentLoaded', () => {
   api('/api/me').then(m => { if (m && m.auth_required) $('#logout').hidden = false; }).catch(() => {});
 });
+
+/* ---------- tema: sistema / chiaro / scuro ---------- */
+(function themeToggle() {
+  const ORDER = ['system', 'light', 'dark'];
+  const LABEL = { system: ['◐', 'Sistema'], light: ['☀', 'Chiaro'], dark: ['☾', 'Scuro'] };
+  const read = () => { try { const t = localStorage.getItem('psb-theme'); return ORDER.includes(t) ? t : 'system'; } catch (e) { return 'system'; } };
+  const write = t => { try { if (t === 'system') localStorage.removeItem('psb-theme'); else localStorage.setItem('psb-theme', t); } catch (e) { /* ignora */ } };
+  function apply(t) {
+    const root = document.documentElement;
+    if (t === 'system') delete root.dataset.theme; else root.dataset.theme = t;
+    const btn = document.getElementById('theme-btn');
+    if (!btn) return;
+    btn.querySelector('.ti').textContent = LABEL[t][0];
+    btn.querySelector('.tl').textContent = LABEL[t][1];
+    btn.setAttribute('aria-label', 'Tema: ' + LABEL[t][1].toLowerCase() + '. Clic per cambiare');
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    let cur = read();
+    apply(cur);
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.addEventListener('click', () => {
+      cur = ORDER[(ORDER.indexOf(cur) + 1) % ORDER.length];
+      write(cur);
+      apply(cur);
+    });
+  });
+})();
