@@ -67,10 +67,6 @@ async function ensureAirport(code) {
   catch (e) { return null; }
 }
 
-/* ---------- gruppi preferiti ---------- */
-let groups = LS.get('psb_groups', []);
-if (!Array.isArray(groups)) groups = [];
-const saveGroups = () => LS.set('psb_groups', groups);
 const chipFields = {};
 
 /* ---------- campo a chip con autocompletamento ---------- */
@@ -81,9 +77,8 @@ function makeChipField(key, rootId, label, placeholder) {
   const box = h('div', { class: 'chipbox' });
   const input = h('input', { type: 'text', placeholder, autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', 'aria-label': label, enterkeyhint: 'done' });
   const list = h('ul', { class: 'ac', role: 'listbox', hidden: true });
-  const groupsEl = h('div', { class: 'groups' });
   const labEl = h('span', { class: 'lab-t' }, label);
-  root.append(labEl, box, groupsEl);
+  root.append(labEl, box);
   box.append(input, list);
   let results = [], active = -1, seq = 0;
   const f = { placeholder };
@@ -98,7 +93,6 @@ function makeChipField(key, rootId, label, placeholder) {
         h('button', { type: 'button', 'aria-label': 'Rimuovi ' + c, onclick: () => { remove(c); input.focus(); } }, '×')), input);
     });
     input.placeholder = codes.length ? '' : f.placeholder;
-    renderGroups();
   }
   function add(code) {
     code = String(code).toUpperCase();
@@ -154,24 +148,7 @@ function makeChipField(key, rootId, label, placeholder) {
   input.addEventListener('blur', () => setTimeout(closeList, 120));
   box.addEventListener('click', e => { if (e.target === box) input.focus(); });
 
-  function renderGroups() {
-    groupsEl.replaceChildren();
-    groups.forEach((g, gi) => {
-      groupsEl.append(h('button', { type: 'button', class: 'gbtn', title: g.codes.join(' + '),
-        onclick: () => { g.codes.forEach(add); } },
-        '+ ' + g.name, h('span', { class: 'x', role: 'button', 'aria-label': 'Elimina gruppo ' + g.name, title: 'Elimina gruppo',
-          onclick: e => { e.stopPropagation(); if (confirm('Eliminare il gruppo «' + g.name + '»?')) { groups.splice(gi, 1); saveGroups(); Object.values(chipFields).forEach(f => f.renderGroups()); } } }, '×')));
-    });
-    groupsEl.append(h('button', { type: 'button', class: 'gbtn save', onclick: () => {
-      if (!codes.length) { alert('Aggiungi almeno un aeroporto da salvare.'); return; }
-      const name = (prompt('Nome del gruppo (es. Casa):', '') || '').trim();
-      if (!name) return;
-      const ex = groups.find(g => g.name.toLowerCase() === name.toLowerCase());
-      if (ex) ex.codes = codes.slice(); else groups.push({ name, codes: codes.slice() });
-      saveGroups(); Object.values(chipFields).forEach(f => f.renderGroups());
-    } }, '★ Salva come gruppo'));
-  }
-  f.codes = codes; f.set = set; f.add = add; f.renderGroups = renderGroups;
+  f.codes = codes; f.set = set; f.add = add;
   f.setLabel = t => { labEl.textContent = t; input.setAttribute('aria-label', t); };
   f.setPlaceholder = t => { f.placeholder = t; input.placeholder = codes.length ? '' : t; };
   chipFields[key] = f;
@@ -1009,14 +986,14 @@ function stayPanel({ city, country, checkin, checkout, guests, inner, title, air
       h('label', { class: 'bud' }, 'Budget a notte', budget, currency)),
     h('div', { class: 'hint', text: `${fmtDate(checkin)} → ${fmtDate(checkout)} · ${nights} ${nights === 1 ? 'notte' : 'notti'} · ${guests} ${guests === 1 ? 'ospite' : 'ospiti'}` }),
     hotels,
-    h('div', { class: 'stay-more', text: 'Cerca anche su:' }),
+    h('div', { class: 'stay-more' }, h('b', null, 'Ne trovi altri qui: '), 'i siti sotto hanno strutture che su Google Hotels non compaiono (ostelli, stanze private, divani).'),
     box);
   let seq = 0;
   // prezzi reali da Google Hotels: caricati una volta, filtrati per budget qui
   let hotelData = null, showAll = false, sortBy = 'price';
   const hasAirport = airport && typeof airport.lat === 'number' && typeof airport.lon === 'number';
   function renderHotels() {
-    hotels.replaceChildren();
+    hotels.replaceChildren(h('div', { class: 'msg info' }, 'Questi risultati vengono solo da Google Hotels: non sono tutte le strutture disponibili. Per trovarne altre usa i link qui sotto.'));
     if (hotelData === null) { hotels.append(h('span', { class: 'hint', text: 'Cerco i prezzi degli alloggi…' })); return; }
     if (hotelData.error) { hotels.append(h('span', { class: 'hint', text: 'Prezzi degli alloggi non disponibili: ' + hotelData.error })); return; }
     const all = hotelData.items || [];
@@ -1028,7 +1005,7 @@ function stayPanel({ city, country, checkin, checkout, guests, inner, title, air
     if (hasAirport) {
       const nearest = Math.min(...all.map(x => x.km ?? 1e9));
       hotels.append(h('div', { class: 'sort hotel-sort' }, 'Ordina:',
-        ...[['price', 'Più economici'], ['dist', `Più vicini all'aeroporto ${airport.iata || ''}`]].map(([k, label]) =>
+        ...[['price', 'Prezzo più basso'], ['dist', `Distanza minore da ${airport.iata || "aeroporto"}`]].map(([k, label]) =>
           h('button', { type: 'button', class: k === sortBy ? 'on' : '', onclick: () => { sortBy = k; renderHotels(); } }, label)),
         nearest > 15 && nearest < 1e9 ? h('span', { class: 'hint', text: `· la struttura più vicina è a ${fmtKm(nearest)}: l'aeroporto è fuori città` }) : null));
     }
@@ -1039,7 +1016,7 @@ function stayPanel({ city, country, checkin, checkout, guests, inner, title, air
     if (extra) list = list.slice(0, limit);
     hotels.append(h('div', { class: 'hotel-list' }, list.map(x => hotelCard(x, hotelData.nights || nights, hasAirport ? airport : null))));
     const foot = h('div', { class: 'hotel-foot' },
-      h('span', { class: 'hint', text: `${within.length} su ${all.length} entro il budget · prezzi Google Hotels, tasse incluse` }));
+      h('span', { class: 'hint', text: `${within.length} su ${all.length} entro il budget · tasse incluse` }));
     if (extra) foot.append(h('button', { type: 'button', class: 'btn small', onclick: () => { showAll = true; renderHotels(); } }, `Mostra tutte (${within.length})`));
     if (hotelData.source_url) foot.append(h('a', { class: 'btn small', href: hotelData.source_url, target: '_blank', rel: 'noopener noreferrer' }, 'Apri Google Hotels'));
     hotels.append(foot);

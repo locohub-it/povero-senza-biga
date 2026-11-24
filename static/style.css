@@ -514,3 +514,5 @@ dialog.confirm p { margin: 0 0 18px; font-size: 1.02rem; font-weight: 600; }
 .stay-more { font-size: .78rem; color: var(--muted); margin-top: 12px; }
 .hotel-dist { font-size: .74rem; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hotel-sort { margin: 2px 0 8px; }
+.msg.info { background: var(--accent-soft); color: var(--fg); margin: 0 0 8px; font-size: .82rem; }
+.stay-more { line-height: 1.4; }
