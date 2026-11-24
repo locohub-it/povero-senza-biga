@@ -5,3 +5,6 @@ __pycache__/
 .pytest_cache/
 *.sqlite3
 .DS_Store
+
+# Credenziali locali (mai su GitHub)
+.credentials/
