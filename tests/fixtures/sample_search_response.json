@@ -1,0 +1,2197 @@
+{
+ "outbound": [
+  {
+   "origin": "NAP",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 30,
+   "currency": "EUR",
+   "airlines": [
+    "Vueling"
+   ],
+   "segments": [
+    {
+     "origin": "NAP",
+     "origin_name": "Aeroporto Internazionale di Napoli",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-15T09:50",
+     "arrival": "2026-12-15T11:50",
+     "duration": 120,
+     "flight_number": "VY6123",
+     "airline": "Vueling",
+     "aircraft": "Airbus A320"
+    }
+   ],
+   "layovers": [],
+   "duration": 120,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNOQVByBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 0,
+   "departure": "2026-12-15T09:50",
+   "arrival": "2026-12-15T11:50",
+   "key": "VY6123@2026-12-15T09:50",
+   "max_layover": 0
+  },
+  {
+   "origin": "NAP",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 31,
+   "currency": "EUR",
+   "airlines": [
+    "Ryanair"
+   ],
+   "segments": [
+    {
+     "origin": "NAP",
+     "origin_name": "Aeroporto Internazionale di Napoli",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-15T13:15",
+     "arrival": "2026-12-15T15:15",
+     "duration": 120,
+     "flight_number": "FR5711",
+     "airline": "Ryanair",
+     "aircraft": "Boeing 737MAX 8 Passenger"
+    }
+   ],
+   "layovers": [],
+   "duration": 120,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNOQVByBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 0,
+   "departure": "2026-12-15T13:15",
+   "arrival": "2026-12-15T15:15",
+   "key": "FR5711@2026-12-15T13:15",
+   "max_layover": 0
+  },
+  {
+   "origin": "NAP",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 40,
+   "currency": "EUR",
+   "airlines": [
+    "Vueling"
+   ],
+   "segments": [
+    {
+     "origin": "NAP",
+     "origin_name": "Aeroporto Internazionale di Napoli",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-15T14:05",
+     "arrival": "2026-12-15T16:05",
+     "duration": 120,
+     "flight_number": "VY2721",
+     "airline": "Vueling",
+     "aircraft": "Airbus A320"
+    }
+   ],
+   "layovers": [],
+   "duration": 120,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNOQVByBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 0,
+   "departure": "2026-12-15T14:05",
+   "arrival": "2026-12-15T16:05",
+   "key": "VY2721@2026-12-15T14:05",
+   "max_layover": 0
+  },
+  {
+   "origin": "NAP",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 40,
+   "currency": "EUR",
+   "airlines": [
+    "Wizz Air"
+   ],
+   "segments": [
+    {
+     "origin": "NAP",
+     "origin_name": "Aeroporto Internazionale di Napoli",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-15T06:15",
+     "arrival": "2026-12-15T08:20",
+     "duration": 125,
+     "flight_number": "W46675",
+     "airline": "Wizz Air",
+     "aircraft": "Airbus A321neo"
+    }
+   ],
+   "layovers": [],
+   "duration": 125,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNOQVByBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 0,
+   "departure": "2026-12-15T06:15",
+   "arrival": "2026-12-15T08:20",
+   "key": "W46675@2026-12-15T06:15",
+   "max_layover": 0
+  },
+  {
+   "origin": "BRI",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 96,
+   "currency": "EUR",
+   "airlines": [
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "BRI",
+     "origin_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-15T06:30",
+     "arrival": "2026-12-15T07:40",
+     "duration": 70,
+     "flight_number": "AZ1602",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-15T14:00",
+     "arrival": "2026-12-15T15:55",
+     "duration": 115,
+     "flight_number": "AZ76",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 380,
+     "overnight": false
+    }
+   ],
+   "duration": 565,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNCUklyBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-15T06:30",
+   "arrival": "2026-12-15T15:55",
+   "key": "AZ1602@2026-12-15T06:30|AZ76@2026-12-15T14:00",
+   "max_layover": 380
+  },
+  {
+   "origin": "BRI",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 96,
+   "currency": "EUR",
+   "airlines": [
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "BRI",
+     "origin_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-15T19:30",
+     "arrival": "2026-12-15T20:40",
+     "duration": 70,
+     "flight_number": "AZ1606",
+     "airline": "ITA",
+     "aircraft": "Airbus A220-100 Passenger"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-16T09:00",
+     "arrival": "2026-12-16T10:50",
+     "duration": 110,
+     "flight_number": "AZ74",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 740,
+     "overnight": true
+    }
+   ],
+   "duration": 920,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNCUklyBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-15T19:30",
+   "arrival": "2026-12-16T10:50",
+   "key": "AZ1606@2026-12-15T19:30|AZ74@2026-12-16T09:00",
+   "max_layover": 740
+  },
+  {
+   "origin": "BRI",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 112,
+   "currency": "EUR",
+   "airlines": [
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "BRI",
+     "origin_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-15T11:20",
+     "arrival": "2026-12-15T12:30",
+     "duration": 70,
+     "flight_number": "AZ1612",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-15T14:00",
+     "arrival": "2026-12-15T15:55",
+     "duration": 115,
+     "flight_number": "AZ76",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 90,
+     "overnight": false
+    }
+   ],
+   "duration": 275,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNCUklyBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-15T11:20",
+   "arrival": "2026-12-15T15:55",
+   "key": "AZ1612@2026-12-15T11:20|AZ76@2026-12-15T14:00",
+   "max_layover": 90
+  },
+  {
+   "origin": "BRI",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 125,
+   "currency": "EUR",
+   "airlines": [
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "BRI",
+     "origin_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-15T06:30",
+     "arrival": "2026-12-15T07:40",
+     "duration": 70,
+     "flight_number": "AZ1602",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-15T09:00",
+     "arrival": "2026-12-15T10:50",
+     "duration": 110,
+     "flight_number": "AZ74",
+     "airline": "ITA",
+     "aircraft": "Airbus A220-300 Passenger"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 80,
+     "overnight": false
+    }
+   ],
+   "duration": 260,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNCUklyBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-15T06:30",
+   "arrival": "2026-12-15T10:50",
+   "key": "AZ1602@2026-12-15T06:30|AZ74@2026-12-15T09:00",
+   "max_layover": 80
+  },
+  {
+   "origin": "BRI",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 154,
+   "currency": "EUR",
+   "airlines": [
+    "Transavia",
+    "KLM"
+   ],
+   "segments": [
+    {
+     "origin": "BRI",
+     "origin_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "destination": "AMS",
+     "destination_name": "Aeroporto di Amsterdam-Schiphol",
+     "departure": "2026-12-15T10:35",
+     "arrival": "2026-12-15T13:20",
+     "duration": 165,
+     "flight_number": "HV5820",
+     "airline": "Transavia",
+     "aircraft": "Airbus A321neo"
+    },
+    {
+     "origin": "AMS",
+     "origin_name": "Aeroporto di Amsterdam-Schiphol",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-15T16:50",
+     "arrival": "2026-12-15T19:00",
+     "duration": 130,
+     "flight_number": "KL1519",
+     "airline": "KLM",
+     "aircraft": "Airbus A321neo"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "AMS",
+     "city": "Amsterdam",
+     "minutes": 210,
+     "overnight": false
+    }
+   ],
+   "duration": 505,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNCUklyBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-15T10:35",
+   "arrival": "2026-12-15T19:00",
+   "key": "HV5820@2026-12-15T10:35|KL1519@2026-12-15T16:50",
+   "max_layover": 210
+  },
+  {
+   "origin": "BRI",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 162,
+   "currency": "EUR",
+   "airlines": [
+    "ITA",
+    "KLM"
+   ],
+   "segments": [
+    {
+     "origin": "BRI",
+     "origin_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-15T06:30",
+     "arrival": "2026-12-15T07:40",
+     "duration": 70,
+     "flight_number": "AZ1602",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "AMS",
+     "destination_name": "Aeroporto di Amsterdam-Schiphol",
+     "departure": "2026-12-15T10:10",
+     "arrival": "2026-12-15T12:40",
+     "duration": 150,
+     "flight_number": "KL1602",
+     "airline": "KLM",
+     "aircraft": "Airbus A321neo"
+    },
+    {
+     "origin": "AMS",
+     "origin_name": "Aeroporto di Amsterdam-Schiphol",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-15T14:25",
+     "arrival": "2026-12-15T16:30",
+     "duration": 125,
+     "flight_number": "KL1517",
+     "airline": "KLM",
+     "aircraft": "Airbus A321neo"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 150,
+     "overnight": false
+    },
+    {
+     "airport": "AMS",
+     "city": "Amsterdam",
+     "minutes": 105,
+     "overnight": false
+    }
+   ],
+   "duration": 600,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNCUklyBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 2,
+   "departure": "2026-12-15T06:30",
+   "arrival": "2026-12-15T16:30",
+   "key": "AZ1602@2026-12-15T06:30|KL1602@2026-12-15T10:10|KL1517@2026-12-15T14:25",
+   "max_layover": 150
+  },
+  {
+   "origin": "BRI",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 178,
+   "currency": "EUR",
+   "airlines": [
+    "Air Dolomiti",
+    "Lufthansa"
+   ],
+   "segments": [
+    {
+     "origin": "BRI",
+     "origin_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "destination": "MUC",
+     "destination_name": "Aeroporto di Monaco di Baviera",
+     "departure": "2026-12-15T18:15",
+     "arrival": "2026-12-15T20:00",
+     "duration": 105,
+     "flight_number": "EN2181",
+     "airline": "Air Dolomiti",
+     "aircraft": "Embraer 195"
+    },
+    {
+     "origin": "MUC",
+     "origin_name": "Aeroporto di Monaco di Baviera",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-16T12:20",
+     "arrival": "2026-12-16T14:30",
+     "duration": 130,
+     "flight_number": "LH1812",
+     "airline": "Lufthansa",
+     "aircraft": "Airbus A321neo"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "MUC",
+     "city": "Monaco di Baviera",
+     "minutes": 980,
+     "overnight": true
+    }
+   ],
+   "duration": 1215,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNCUklyBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-15T18:15",
+   "arrival": "2026-12-16T14:30",
+   "key": "EN2181@2026-12-15T18:15|LH1812@2026-12-16T12:20",
+   "max_layover": 980
+  },
+  {
+   "origin": "BRI",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 213,
+   "currency": "EUR",
+   "airlines": [
+    "ITA",
+    "SWISS"
+   ],
+   "segments": [
+    {
+     "origin": "BRI",
+     "origin_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-15T15:15",
+     "arrival": "2026-12-15T16:25",
+     "duration": 70,
+     "flight_number": "AZ1616",
+     "airline": "ITA",
+     "aircraft": "Airbus A320"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "ZRH",
+     "destination_name": "Aeroporto di Zurigo-Kloten",
+     "departure": "2026-12-15T20:15",
+     "arrival": "2026-12-15T21:50",
+     "duration": 95,
+     "flight_number": "LX1733",
+     "airline": "SWISS",
+     "aircraft": "Airbus A220-300 Passenger"
+    },
+    {
+     "origin": "ZRH",
+     "origin_name": "Aeroporto di Zurigo-Kloten",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-16T07:20",
+     "arrival": "2026-12-16T09:05",
+     "duration": 105,
+     "flight_number": "LX1952",
+     "airline": "SWISS",
+     "aircraft": "Embraer 195"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 230,
+     "overnight": false
+    },
+    {
+     "airport": "ZRH",
+     "city": "Zurigo",
+     "minutes": 570,
+     "overnight": true
+    }
+   ],
+   "duration": 1070,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNCUklyBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 2,
+   "departure": "2026-12-15T15:15",
+   "arrival": "2026-12-16T09:05",
+   "key": "AZ1616@2026-12-15T15:15|LX1733@2026-12-15T20:15|LX1952@2026-12-16T07:20",
+   "max_layover": 570
+  },
+  {
+   "origin": "NAP",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 216,
+   "currency": "EUR",
+   "airlines": [
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "NAP",
+     "origin_name": "Aeroporto Internazionale di Napoli",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-15T06:30",
+     "arrival": "2026-12-15T07:25",
+     "duration": 55,
+     "flight_number": "AZ1268",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-15T09:00",
+     "arrival": "2026-12-15T10:50",
+     "duration": 110,
+     "flight_number": "AZ74",
+     "airline": "ITA",
+     "aircraft": "Airbus A220-300 Passenger"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 95,
+     "overnight": false
+    }
+   ],
+   "duration": 260,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNOQVByBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-15T06:30",
+   "arrival": "2026-12-15T10:50",
+   "key": "AZ1268@2026-12-15T06:30|AZ74@2026-12-15T09:00",
+   "max_layover": 95
+  },
+  {
+   "origin": "BRI",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 237,
+   "currency": "EUR",
+   "airlines": [
+    "ITA",
+    "Lufthansa"
+   ],
+   "segments": [
+    {
+     "origin": "BRI",
+     "origin_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-15T06:30",
+     "arrival": "2026-12-15T07:40",
+     "duration": 70,
+     "flight_number": "AZ1602",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "MUC",
+     "destination_name": "Aeroporto di Monaco di Baviera",
+     "departure": "2026-12-15T08:30",
+     "arrival": "2026-12-15T10:05",
+     "duration": 95,
+     "flight_number": "AZ432",
+     "airline": "ITA",
+     "aircraft": "Airbus A220-100 Passenger"
+    },
+    {
+     "origin": "MUC",
+     "origin_name": "Aeroporto di Monaco di Baviera",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-15T12:20",
+     "arrival": "2026-12-15T14:30",
+     "duration": 130,
+     "flight_number": "LH1812",
+     "airline": "Lufthansa",
+     "aircraft": "Airbus A320neo"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 50,
+     "overnight": false
+    },
+    {
+     "airport": "MUC",
+     "city": "Monaco di Baviera",
+     "minutes": 135,
+     "overnight": false
+    }
+   ],
+   "duration": 480,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNCUklyBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 2,
+   "departure": "2026-12-15T06:30",
+   "arrival": "2026-12-15T14:30",
+   "key": "AZ1602@2026-12-15T06:30|AZ432@2026-12-15T08:30|LH1812@2026-12-15T12:20",
+   "max_layover": 135
+  },
+  {
+   "origin": "BRI",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 242,
+   "currency": "EUR",
+   "airlines": [
+    "ITA",
+    "SWISS"
+   ],
+   "segments": [
+    {
+     "origin": "BRI",
+     "origin_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-15T06:30",
+     "arrival": "2026-12-15T07:40",
+     "duration": 70,
+     "flight_number": "AZ1602",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "ZRH",
+     "destination_name": "Aeroporto di Zurigo-Kloten",
+     "departure": "2026-12-15T08:30",
+     "arrival": "2026-12-15T10:05",
+     "duration": 95,
+     "flight_number": "AZ572",
+     "airline": "ITA",
+     "aircraft": "Airbus A220 Passenger"
+    },
+    {
+     "origin": "ZRH",
+     "origin_name": "Aeroporto di Zurigo-Kloten",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-15T12:20",
+     "arrival": "2026-12-15T14:05",
+     "duration": 105,
+     "flight_number": "LX1954",
+     "airline": "SWISS",
+     "aircraft": "Airbus A320neo"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 50,
+     "overnight": false
+    },
+    {
+     "airport": "ZRH",
+     "city": "Zurigo",
+     "minutes": 135,
+     "overnight": false
+    }
+   ],
+   "duration": 455,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNCUklyBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 2,
+   "departure": "2026-12-15T06:30",
+   "arrival": "2026-12-15T14:05",
+   "key": "AZ1602@2026-12-15T06:30|AZ572@2026-12-15T08:30|LX1954@2026-12-15T12:20",
+   "max_layover": 135
+  },
+  {
+   "origin": "BRI",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 242,
+   "currency": "EUR",
+   "airlines": [
+    "ITA",
+    "SWISS"
+   ],
+   "segments": [
+    {
+     "origin": "BRI",
+     "origin_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-15T06:30",
+     "arrival": "2026-12-15T07:40",
+     "duration": 70,
+     "flight_number": "AZ1602",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "ZRH",
+     "destination_name": "Aeroporto di Zurigo-Kloten",
+     "departure": "2026-12-15T09:35",
+     "arrival": "2026-12-15T11:20",
+     "duration": 105,
+     "flight_number": "LX1727",
+     "airline": "SWISS",
+     "aircraft": "Airbus A321neo"
+    },
+    {
+     "origin": "ZRH",
+     "origin_name": "Aeroporto di Zurigo-Kloten",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-15T12:20",
+     "arrival": "2026-12-15T14:05",
+     "duration": 105,
+     "flight_number": "LX1954",
+     "airline": "SWISS",
+     "aircraft": "Airbus A320neo"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 115,
+     "overnight": false
+    },
+    {
+     "airport": "ZRH",
+     "city": "Zurigo",
+     "minutes": 60,
+     "overnight": false
+    }
+   ],
+   "duration": 455,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNCUklyBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 2,
+   "departure": "2026-12-15T06:30",
+   "arrival": "2026-12-15T14:05",
+   "key": "AZ1602@2026-12-15T06:30|LX1727@2026-12-15T09:35|LX1954@2026-12-15T12:20",
+   "max_layover": 115
+  },
+  {
+   "origin": "BRI",
+   "destination": "BCN",
+   "date": "2026-12-15",
+   "price": 328,
+   "currency": "EUR",
+   "airlines": [
+    "ITA",
+    "Air France"
+   ],
+   "segments": [
+    {
+     "origin": "BRI",
+     "origin_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "destination": "LIN",
+     "destination_name": "Aeroporto di Milano Linate",
+     "departure": "2026-12-15T11:30",
+     "arrival": "2026-12-15T13:00",
+     "duration": 90,
+     "flight_number": "AZ1648",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    },
+    {
+     "origin": "LIN",
+     "origin_name": "Aeroporto di Milano Linate",
+     "destination": "CDG",
+     "destination_name": "Aeroporto di Parigi Charles de Gaulle",
+     "departure": "2026-12-15T14:55",
+     "arrival": "2026-12-15T16:30",
+     "duration": 95,
+     "flight_number": "AF1013",
+     "airline": "Air France",
+     "aircraft": "Airbus A320"
+    },
+    {
+     "origin": "CDG",
+     "origin_name": "Aeroporto di Parigi Charles de Gaulle",
+     "destination": "BCN",
+     "destination_name": "Aeroporto di Barcellona",
+     "departure": "2026-12-15T17:30",
+     "arrival": "2026-12-15T19:20",
+     "duration": 110,
+     "flight_number": "AF1048",
+     "airline": "Air France",
+     "aircraft": "Embraer 190"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "LIN",
+     "city": "Milano",
+     "minutes": 115,
+     "overnight": false
+    },
+    {
+     "airport": "CDG",
+     "city": "Parigi",
+     "minutes": 60,
+     "overnight": false
+    }
+   ],
+   "duration": 470,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhwSCjIwMjYtMTItMTVYFGoFEgNCUklyBRIDQkNOQgEBSAGYAQI=&hl=it&curr=EUR",
+   "stops": 2,
+   "departure": "2026-12-15T11:30",
+   "arrival": "2026-12-15T19:20",
+   "key": "AZ1648@2026-12-15T11:30|AF1013@2026-12-15T14:55|AF1048@2026-12-15T17:30",
+   "max_layover": 115
+  }
+ ],
+ "inbound": [
+  {
+   "origin": "BCN",
+   "destination": "NAP",
+   "date": "2026-12-19",
+   "price": 60,
+   "currency": "EUR",
+   "airlines": [
+    "Wizz Air"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "NAP",
+     "destination_name": "Aeroporto Internazionale di Napoli",
+     "departure": "2026-12-19T09:25",
+     "arrival": "2026-12-19T11:15",
+     "duration": 110,
+     "flight_number": "W46676",
+     "airline": "Wizz Air",
+     "aircraft": "Airbus A321neo"
+    }
+   ],
+   "layovers": [],
+   "duration": 110,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA05BUEIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 0,
+   "departure": "2026-12-19T09:25",
+   "arrival": "2026-12-19T11:15",
+   "key": "W46676@2026-12-19T09:25",
+   "max_layover": 0
+  },
+  {
+   "origin": "BCN",
+   "destination": "NAP",
+   "date": "2026-12-19",
+   "price": 60,
+   "currency": "EUR",
+   "airlines": [
+    "Ryanair"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "NAP",
+     "destination_name": "Aeroporto Internazionale di Napoli",
+     "departure": "2026-12-19T13:25",
+     "arrival": "2026-12-19T15:25",
+     "duration": 120,
+     "flight_number": "FR58",
+     "airline": "Ryanair",
+     "aircraft": "Boeing 737"
+    }
+   ],
+   "layovers": [],
+   "duration": 120,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA05BUEIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 0,
+   "departure": "2026-12-19T13:25",
+   "arrival": "2026-12-19T15:25",
+   "key": "FR58@2026-12-19T13:25",
+   "max_layover": 0
+  },
+  {
+   "origin": "BCN",
+   "destination": "NAP",
+   "date": "2026-12-19",
+   "price": 76,
+   "currency": "EUR",
+   "airlines": [
+    "Vueling"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "NAP",
+     "destination_name": "Aeroporto Internazionale di Napoli",
+     "departure": "2026-12-19T07:10",
+     "arrival": "2026-12-19T09:05",
+     "duration": 115,
+     "flight_number": "VY6122",
+     "airline": "Vueling",
+     "aircraft": "Airbus A320"
+    }
+   ],
+   "layovers": [],
+   "duration": 115,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA05BUEIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 0,
+   "departure": "2026-12-19T07:10",
+   "arrival": "2026-12-19T09:05",
+   "key": "VY6122@2026-12-19T07:10",
+   "max_layover": 0
+  },
+  {
+   "origin": "BCN",
+   "destination": "NAP",
+   "date": "2026-12-19",
+   "price": 80,
+   "currency": "EUR",
+   "airlines": [
+    "Ryanair"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "NAP",
+     "destination_name": "Aeroporto Internazionale di Napoli",
+     "departure": "2026-12-19T20:25",
+     "arrival": "2026-12-19T22:25",
+     "duration": 120,
+     "flight_number": "FR5710",
+     "airline": "Ryanair",
+     "aircraft": "Boeing 737"
+    }
+   ],
+   "layovers": [],
+   "duration": 120,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA05BUEIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 0,
+   "departure": "2026-12-19T20:25",
+   "arrival": "2026-12-19T22:25",
+   "key": "FR5710@2026-12-19T20:25",
+   "max_layover": 0
+  },
+  {
+   "origin": "BCN",
+   "destination": "NAP",
+   "date": "2026-12-19",
+   "price": 81,
+   "currency": "EUR",
+   "airlines": [
+    "Vueling"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "NAP",
+     "destination_name": "Aeroporto Internazionale di Napoli",
+     "departure": "2026-12-19T11:10",
+     "arrival": "2026-12-19T13:05",
+     "duration": 115,
+     "flight_number": "VY2720",
+     "airline": "Vueling",
+     "aircraft": "Airbus A321"
+    }
+   ],
+   "layovers": [],
+   "duration": 115,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA05BUEIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 0,
+   "departure": "2026-12-19T11:10",
+   "arrival": "2026-12-19T13:05",
+   "key": "VY2720@2026-12-19T11:10",
+   "max_layover": 0
+  },
+  {
+   "origin": "BCN",
+   "destination": "NAP",
+   "date": "2026-12-19",
+   "price": 87,
+   "currency": "EUR",
+   "airlines": [
+    "Vueling"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "NAP",
+     "destination_name": "Aeroporto Internazionale di Napoli",
+     "departure": "2026-12-19T19:45",
+     "arrival": "2026-12-19T21:40",
+     "duration": 115,
+     "flight_number": "VY6124",
+     "airline": "Vueling",
+     "aircraft": "Airbus A320"
+    }
+   ],
+   "layovers": [],
+   "duration": 115,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA05BUEIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 0,
+   "departure": "2026-12-19T19:45",
+   "arrival": "2026-12-19T21:40",
+   "key": "VY6124@2026-12-19T19:45",
+   "max_layover": 0
+  },
+  {
+   "origin": "BCN",
+   "destination": "BRI",
+   "date": "2026-12-19",
+   "price": 112,
+   "currency": "EUR",
+   "airlines": [
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-19T16:50",
+     "arrival": "2026-12-19T18:35",
+     "duration": 105,
+     "flight_number": "AZ79",
+     "airline": "ITA",
+     "aircraft": "Airbus A220-300 Passenger"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "BRI",
+     "destination_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "departure": "2026-12-20T09:20",
+     "arrival": "2026-12-20T10:35",
+     "duration": 75,
+     "flight_number": "AZ1617",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 885,
+     "overnight": true
+    }
+   ],
+   "duration": 1065,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA0JSSUIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-19T16:50",
+   "arrival": "2026-12-20T10:35",
+   "key": "AZ79@2026-12-19T16:50|AZ1617@2026-12-20T09:20",
+   "max_layover": 885
+  },
+  {
+   "origin": "BCN",
+   "destination": "BRI",
+   "date": "2026-12-19",
+   "price": 122,
+   "currency": "EUR",
+   "airlines": [
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-19T06:20",
+     "arrival": "2026-12-19T08:05",
+     "duration": 105,
+     "flight_number": "AZ75",
+     "airline": "ITA",
+     "aircraft": "Airbus A320"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "BRI",
+     "destination_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "departure": "2026-12-19T13:20",
+     "arrival": "2026-12-19T14:30",
+     "duration": 70,
+     "flight_number": "AZ1613",
+     "airline": "ITA",
+     "aircraft": "Airbus A220-300 Passenger"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 315,
+     "overnight": false
+    }
+   ],
+   "duration": 490,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA0JSSUIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-19T06:20",
+   "arrival": "2026-12-19T14:30",
+   "key": "AZ75@2026-12-19T06:20|AZ1613@2026-12-19T13:20",
+   "max_layover": 315
+  },
+  {
+   "origin": "BCN",
+   "destination": "BRI",
+   "date": "2026-12-19",
+   "price": 135,
+   "currency": "EUR",
+   "airlines": [
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-19T06:20",
+     "arrival": "2026-12-19T08:05",
+     "duration": 105,
+     "flight_number": "AZ75",
+     "airline": "ITA",
+     "aircraft": "Airbus A320"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "BRI",
+     "destination_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "departure": "2026-12-19T09:20",
+     "arrival": "2026-12-19T10:35",
+     "duration": 75,
+     "flight_number": "AZ1617",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 75,
+     "overnight": false
+    }
+   ],
+   "duration": 255,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA0JSSUIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-19T06:20",
+   "arrival": "2026-12-19T10:35",
+   "key": "AZ75@2026-12-19T06:20|AZ1617@2026-12-19T09:20",
+   "max_layover": 75
+  },
+  {
+   "origin": "BCN",
+   "destination": "BRI",
+   "date": "2026-12-19",
+   "price": 135,
+   "currency": "EUR",
+   "airlines": [
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-19T16:50",
+     "arrival": "2026-12-19T18:35",
+     "duration": 105,
+     "flight_number": "AZ79",
+     "airline": "ITA",
+     "aircraft": "Airbus A220-300 Passenger"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "BRI",
+     "destination_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "departure": "2026-12-19T21:50",
+     "arrival": "2026-12-19T23:05",
+     "duration": 75,
+     "flight_number": "AZ1603",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 195,
+     "overnight": false
+    }
+   ],
+   "duration": 375,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA0JSSUIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-19T16:50",
+   "arrival": "2026-12-19T23:05",
+   "key": "AZ79@2026-12-19T16:50|AZ1603@2026-12-19T21:50",
+   "max_layover": 195
+  },
+  {
+   "origin": "BCN",
+   "destination": "BRI",
+   "date": "2026-12-19",
+   "price": 135,
+   "currency": "EUR",
+   "airlines": [
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-19T11:40",
+     "arrival": "2026-12-19T13:25",
+     "duration": 105,
+     "flight_number": "AZ77",
+     "airline": "ITA",
+     "aircraft": "Airbus A220-300 Passenger"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "BRI",
+     "destination_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "departure": "2026-12-19T17:30",
+     "arrival": "2026-12-19T18:45",
+     "duration": 75,
+     "flight_number": "AZ1607",
+     "airline": "ITA",
+     "aircraft": "Airbus A220-100 Passenger"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 245,
+     "overnight": false
+    }
+   ],
+   "duration": 425,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA0JSSUIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-19T11:40",
+   "arrival": "2026-12-19T18:45",
+   "key": "AZ77@2026-12-19T11:40|AZ1607@2026-12-19T17:30",
+   "max_layover": 245
+  },
+  {
+   "origin": "BCN",
+   "destination": "BRI",
+   "date": "2026-12-19",
+   "price": 163,
+   "currency": "EUR",
+   "airlines": [
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-19T11:40",
+     "arrival": "2026-12-19T13:25",
+     "duration": 105,
+     "flight_number": "AZ77",
+     "airline": "ITA",
+     "aircraft": "Airbus A220-300 Passenger"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "LIN",
+     "destination_name": "Aeroporto di Milano Linate",
+     "departure": "2026-12-19T14:30",
+     "arrival": "2026-12-19T15:45",
+     "duration": 75,
+     "flight_number": "AZ2038",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    },
+    {
+     "origin": "LIN",
+     "origin_name": "Aeroporto di Milano Linate",
+     "destination": "BRI",
+     "destination_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "departure": "2026-12-19T17:00",
+     "arrival": "2026-12-19T18:30",
+     "duration": 90,
+     "flight_number": "AZ1647",
+     "airline": "ITA",
+     "aircraft": "Airbus A220-300 Passenger"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 65,
+     "overnight": false
+    },
+    {
+     "airport": "LIN",
+     "city": "Milano",
+     "minutes": 75,
+     "overnight": false
+    }
+   ],
+   "duration": 410,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA0JSSUIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 2,
+   "departure": "2026-12-19T11:40",
+   "arrival": "2026-12-19T18:30",
+   "key": "AZ77@2026-12-19T11:40|AZ2038@2026-12-19T14:30|AZ1647@2026-12-19T17:00",
+   "max_layover": 75
+  },
+  {
+   "origin": "BCN",
+   "destination": "BRI",
+   "date": "2026-12-19",
+   "price": 229,
+   "currency": "EUR",
+   "airlines": [
+    "Air Serbia"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "BEG",
+     "destination_name": "Aeroporto di Belgrado-Nikola Tesla",
+     "departure": "2026-12-19T09:55",
+     "arrival": "2026-12-19T12:30",
+     "duration": 155,
+     "flight_number": "JU581",
+     "airline": "Air Serbia",
+     "aircraft": "Airbus A220-300 Passenger"
+    },
+    {
+     "origin": "BEG",
+     "origin_name": "Aeroporto di Belgrado-Nikola Tesla",
+     "destination": "BRI",
+     "destination_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "departure": "2026-12-20T18:15",
+     "arrival": "2026-12-20T19:50",
+     "duration": 95,
+     "flight_number": "JU494",
+     "airline": "Air Serbia",
+     "aircraft": "ATR 72"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "BEG",
+     "city": "Belgrado",
+     "minutes": 1785,
+     "overnight": true
+    }
+   ],
+   "duration": 2035,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA0JSSUIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-19T09:55",
+   "arrival": "2026-12-20T19:50",
+   "key": "JU581@2026-12-19T09:55|JU494@2026-12-20T18:15",
+   "max_layover": 1785
+  },
+  {
+   "origin": "BCN",
+   "destination": "BRI",
+   "date": "2026-12-19",
+   "price": 323,
+   "currency": "EUR",
+   "airlines": [
+    "Lufthansa",
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "MUC",
+     "destination_name": "Aeroporto di Monaco di Baviera",
+     "departure": "2026-12-19T07:30",
+     "arrival": "2026-12-19T09:30",
+     "duration": 120,
+     "flight_number": "LH1817",
+     "airline": "Lufthansa",
+     "aircraft": "Airbus A320neo"
+    },
+    {
+     "origin": "MUC",
+     "origin_name": "Aeroporto di Monaco di Baviera",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-19T10:55",
+     "arrival": "2026-12-19T12:30",
+     "duration": 95,
+     "flight_number": "AZ437",
+     "airline": "ITA",
+     "aircraft": "Airbus A220-100 Passenger"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "BRI",
+     "destination_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "departure": "2026-12-19T13:20",
+     "arrival": "2026-12-19T14:30",
+     "duration": 70,
+     "flight_number": "AZ1613",
+     "airline": "ITA",
+     "aircraft": "Airbus A220-300 Passenger"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "MUC",
+     "city": "Monaco di Baviera",
+     "minutes": 85,
+     "overnight": false
+    },
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 50,
+     "overnight": false
+    }
+   ],
+   "duration": 420,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA0JSSUIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 2,
+   "departure": "2026-12-19T07:30",
+   "arrival": "2026-12-19T14:30",
+   "key": "LH1817@2026-12-19T07:30|AZ437@2026-12-19T10:55|AZ1613@2026-12-19T13:20",
+   "max_layover": 85
+  },
+  {
+   "origin": "BCN",
+   "destination": "BRI",
+   "date": "2026-12-19",
+   "price": 323,
+   "currency": "EUR",
+   "airlines": [
+    "SWISS",
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "ZRH",
+     "destination_name": "Aeroporto di Zurigo-Kloten",
+     "departure": "2026-12-19T19:55",
+     "arrival": "2026-12-19T21:40",
+     "duration": 105,
+     "flight_number": "LX1957",
+     "airline": "SWISS",
+     "aircraft": "Airbus A320neo"
+    },
+    {
+     "origin": "ZRH",
+     "origin_name": "Aeroporto di Zurigo-Kloten",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-20T07:10",
+     "arrival": "2026-12-20T08:40",
+     "duration": 90,
+     "flight_number": "LX1726",
+     "airline": "SWISS",
+     "aircraft": "Airbus A321neo"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "BRI",
+     "destination_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "departure": "2026-12-20T17:30",
+     "arrival": "2026-12-20T18:45",
+     "duration": 75,
+     "flight_number": "AZ1607",
+     "airline": "ITA",
+     "aircraft": "Airbus A320"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "ZRH",
+     "city": "Zurigo",
+     "minutes": 570,
+     "overnight": true
+    },
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 530,
+     "overnight": false
+    }
+   ],
+   "duration": 1370,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA0JSSUIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 2,
+   "departure": "2026-12-19T19:55",
+   "arrival": "2026-12-20T18:45",
+   "key": "LX1957@2026-12-19T19:55|LX1726@2026-12-20T07:10|AZ1607@2026-12-20T17:30",
+   "max_layover": 570
+  },
+  {
+   "origin": "BCN",
+   "destination": "BRI",
+   "date": "2026-12-19",
+   "price": 367,
+   "currency": "EUR",
+   "airlines": [
+    "Air France",
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "CDG",
+     "destination_name": "Aeroporto di Parigi Charles de Gaulle",
+     "departure": "2026-12-19T20:20",
+     "arrival": "2026-12-19T22:20",
+     "duration": 120,
+     "flight_number": "AF1049",
+     "airline": "Air France",
+     "aircraft": "Airbus A320"
+    },
+    {
+     "origin": "CDG",
+     "origin_name": "Aeroporto di Parigi Charles de Gaulle",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-20T07:15",
+     "arrival": "2026-12-20T09:20",
+     "duration": 125,
+     "flight_number": "AF1204",
+     "airline": "Air France",
+     "aircraft": "Airbus A220-300 Passenger"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "BRI",
+     "destination_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "departure": "2026-12-20T17:30",
+     "arrival": "2026-12-20T18:45",
+     "duration": 75,
+     "flight_number": "AZ1607",
+     "airline": "ITA",
+     "aircraft": "Airbus A320"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "CDG",
+     "city": "Parigi",
+     "minutes": 535,
+     "overnight": true
+    },
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 490,
+     "overnight": false
+    }
+   ],
+   "duration": 1345,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA0JSSUIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 2,
+   "departure": "2026-12-19T20:20",
+   "arrival": "2026-12-20T18:45",
+   "key": "AF1049@2026-12-19T20:20|AF1204@2026-12-20T07:15|AZ1607@2026-12-20T17:30",
+   "max_layover": 535
+  },
+  {
+   "origin": "BCN",
+   "destination": "BRI",
+   "date": "2026-12-19",
+   "price": 379,
+   "currency": "EUR",
+   "airlines": [
+    "SWISS",
+    "ITA"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "ZRH",
+     "destination_name": "Aeroporto di Zurigo-Kloten",
+     "departure": "2026-12-19T14:55",
+     "arrival": "2026-12-19T16:40",
+     "duration": 105,
+     "flight_number": "LX1955",
+     "airline": "SWISS",
+     "aircraft": "Airbus A320neo"
+    },
+    {
+     "origin": "ZRH",
+     "origin_name": "Aeroporto di Zurigo-Kloten",
+     "destination": "FCO",
+     "destination_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "departure": "2026-12-19T17:50",
+     "arrival": "2026-12-19T19:25",
+     "duration": 95,
+     "flight_number": "LX1732",
+     "airline": "SWISS",
+     "aircraft": "Airbus A320neo"
+    },
+    {
+     "origin": "FCO",
+     "origin_name": "Aeroporto di Roma - Fiumicino Leonardo da Vinci",
+     "destination": "BRI",
+     "destination_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "departure": "2026-12-19T21:50",
+     "arrival": "2026-12-19T23:05",
+     "duration": 75,
+     "flight_number": "AZ1603",
+     "airline": "ITA",
+     "aircraft": "Airbus A320neo"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "ZRH",
+     "city": "Zurigo",
+     "minutes": 70,
+     "overnight": false
+    },
+    {
+     "airport": "FCO",
+     "city": "Roma",
+     "minutes": 145,
+     "overnight": false
+    }
+   ],
+   "duration": 490,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA0JSSUIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 2,
+   "departure": "2026-12-19T14:55",
+   "arrival": "2026-12-19T23:05",
+   "key": "LX1955@2026-12-19T14:55|LX1732@2026-12-19T17:50|AZ1603@2026-12-19T21:50",
+   "max_layover": 145
+  },
+  {
+   "origin": "BCN",
+   "destination": "BRI",
+   "date": "2026-12-19",
+   "price": 430,
+   "currency": "EUR",
+   "airlines": [
+    "Lufthansa",
+    "Discover Airlines"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "FRA",
+     "destination_name": "Aeroporto di Francoforte sul Meno",
+     "departure": "2026-12-19T13:50",
+     "arrival": "2026-12-19T16:00",
+     "duration": 130,
+     "flight_number": "LH1129",
+     "airline": "Lufthansa",
+     "aircraft": "Airbus A321"
+    },
+    {
+     "origin": "FRA",
+     "origin_name": "Aeroporto di Francoforte sul Meno",
+     "destination": "BRI",
+     "destination_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "departure": "2026-12-19T17:15",
+     "arrival": "2026-12-19T19:25",
+     "duration": 130,
+     "flight_number": "4Y802",
+     "airline": "Discover Airlines",
+     "aircraft": "Airbus A320"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "FRA",
+     "city": "Francoforte sul Meno",
+     "minutes": 75,
+     "overnight": false
+    }
+   ],
+   "duration": 335,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA0JSSUIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-19T13:50",
+   "arrival": "2026-12-19T19:25",
+   "key": "LH1129@2026-12-19T13:50|4Y802@2026-12-19T17:15",
+   "max_layover": 75
+  },
+  {
+   "origin": "BCN",
+   "destination": "BRI",
+   "date": "2026-12-19",
+   "price": 616,
+   "currency": "EUR",
+   "airlines": [
+    "KLM",
+    "Transavia"
+   ],
+   "segments": [
+    {
+     "origin": "BCN",
+     "origin_name": "Aeroporto di Barcellona",
+     "destination": "AMS",
+     "destination_name": "Aeroporto di Amsterdam-Schiphol",
+     "departure": "2026-12-19T13:10",
+     "arrival": "2026-12-19T15:35",
+     "duration": 145,
+     "flight_number": "KL1514",
+     "airline": "KLM",
+     "aircraft": "Airbus A319"
+    },
+    {
+     "origin": "AMS",
+     "origin_name": "Aeroporto di Amsterdam-Schiphol",
+     "destination": "BRI",
+     "destination_name": "Aeroporto Internazionale di Bari-Karol Wojtyla",
+     "departure": "2026-12-19T17:55",
+     "arrival": "2026-12-19T20:20",
+     "duration": 145,
+     "flight_number": "HV5817",
+     "airline": "Transavia",
+     "aircraft": "Boeing 737"
+    }
+   ],
+   "layovers": [
+    {
+     "airport": "AMS",
+     "city": "Amsterdam",
+     "minutes": 140,
+     "overnight": false
+    }
+   ],
+   "duration": 430,
+   "booking_url": "https://www.google.com/travel/flights/search?tfs=GhoSCjIwMjYtMTItMTlqBRIDQkNOcgUSA0JSSUIBAUgBmAEC&hl=it&curr=EUR",
+   "stops": 1,
+   "departure": "2026-12-19T13:10",
+   "arrival": "2026-12-19T20:20",
+   "key": "KL1514@2026-12-19T13:10|HV5817@2026-12-19T17:55",
+   "max_layover": 140
+  }
+ ],
+ "combos": [
+  {
+   "total": 90,
+   "outbound": "VY6123@2026-12-15T09:50",
+   "inbound": "W46676@2026-12-19T09:25",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 90,
+   "outbound": "VY6123@2026-12-15T09:50",
+   "inbound": "FR58@2026-12-19T13:25",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 91,
+   "outbound": "FR5711@2026-12-15T13:15",
+   "inbound": "W46676@2026-12-19T09:25",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 91,
+   "outbound": "FR5711@2026-12-15T13:15",
+   "inbound": "FR58@2026-12-19T13:25",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 100,
+   "outbound": "VY2721@2026-12-15T14:05",
+   "inbound": "W46676@2026-12-19T09:25",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 100,
+   "outbound": "VY2721@2026-12-15T14:05",
+   "inbound": "FR58@2026-12-19T13:25",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 100,
+   "outbound": "W46675@2026-12-15T06:15",
+   "inbound": "W46676@2026-12-19T09:25",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 100,
+   "outbound": "W46675@2026-12-15T06:15",
+   "inbound": "FR58@2026-12-19T13:25",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 106,
+   "outbound": "VY6123@2026-12-15T09:50",
+   "inbound": "VY6122@2026-12-19T07:10",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 107,
+   "outbound": "FR5711@2026-12-15T13:15",
+   "inbound": "VY6122@2026-12-19T07:10",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 110,
+   "outbound": "VY6123@2026-12-15T09:50",
+   "inbound": "FR5710@2026-12-19T20:25",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 111,
+   "outbound": "VY6123@2026-12-15T09:50",
+   "inbound": "VY2720@2026-12-19T11:10",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 111,
+   "outbound": "FR5711@2026-12-15T13:15",
+   "inbound": "FR5710@2026-12-19T20:25",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 112,
+   "outbound": "FR5711@2026-12-15T13:15",
+   "inbound": "VY2720@2026-12-19T11:10",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 116,
+   "outbound": "VY2721@2026-12-15T14:05",
+   "inbound": "VY6122@2026-12-19T07:10",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 116,
+   "outbound": "W46675@2026-12-15T06:15",
+   "inbound": "VY6122@2026-12-19T07:10",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 117,
+   "outbound": "VY6123@2026-12-15T09:50",
+   "inbound": "VY6124@2026-12-19T19:45",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 118,
+   "outbound": "FR5711@2026-12-15T13:15",
+   "inbound": "VY6124@2026-12-19T19:45",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 120,
+   "outbound": "VY2721@2026-12-15T14:05",
+   "inbound": "FR5710@2026-12-19T20:25",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 120,
+   "outbound": "W46675@2026-12-15T06:15",
+   "inbound": "FR5710@2026-12-19T20:25",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 121,
+   "outbound": "VY2721@2026-12-15T14:05",
+   "inbound": "VY2720@2026-12-19T11:10",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 121,
+   "outbound": "W46675@2026-12-15T06:15",
+   "inbound": "VY2720@2026-12-19T11:10",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 127,
+   "outbound": "VY2721@2026-12-15T14:05",
+   "inbound": "VY6124@2026-12-19T19:45",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 127,
+   "outbound": "W46675@2026-12-15T06:15",
+   "inbound": "VY6124@2026-12-19T19:45",
+   "nights": 4,
+   "same_airports": true
+  },
+  {
+   "total": 142,
+   "outbound": "VY6123@2026-12-15T09:50",
+   "inbound": "AZ79@2026-12-19T16:50|AZ1617@2026-12-20T09:20",
+   "nights": 4,
+   "same_airports": false
+  },
+  {
+   "total": 143,
+   "outbound": "FR5711@2026-12-15T13:15",
+   "inbound": "AZ79@2026-12-19T16:50|AZ1617@2026-12-20T09:20",
+   "nights": 4,
+   "same_airports": false
+  },
+  {
+   "total": 152,
+   "outbound": "VY6123@2026-12-15T09:50",
+   "inbound": "AZ75@2026-12-19T06:20|AZ1613@2026-12-19T13:20",
+   "nights": 4,
+   "same_airports": false
+  },
+  {
+   "total": 152,
+   "outbound": "VY2721@2026-12-15T14:05",
+   "inbound": "AZ79@2026-12-19T16:50|AZ1617@2026-12-20T09:20",
+   "nights": 4,
+   "same_airports": false
+  },
+  {
+   "total": 152,
+   "outbound": "W46675@2026-12-15T06:15",
+   "inbound": "AZ79@2026-12-19T16:50|AZ1617@2026-12-20T09:20",
+   "nights": 4,
+   "same_airports": false
+  },
+  {
+   "total": 153,
+   "outbound": "FR5711@2026-12-15T13:15",
+   "inbound": "AZ75@2026-12-19T06:20|AZ1613@2026-12-19T13:20",
+   "nights": 4,
+   "same_airports": false
+  }
+ ],
+ "errors": [],
+ "stats": {
+  "queries": 8,
+  "outbound_found": 18,
+  "outbound_after_filters": 17,
+  "inbound_found": 19,
+  "inbound_after_filters": 19,
+  "currency": "EUR"
+ },
+ "airports": {
+  "BCN": {
+   "iata": "BCN",
+   "name": "Josep Tarradellas Barcelona-El Prat Airport",
+   "city": "Barcelona",
+   "country": "Spain",
+   "cc": "ES",
+   "lat": 41.2971,
+   "lon": 2.0785,
+   "size": "L"
+  },
+  "BEG": {
+   "iata": "BEG",
+   "name": "Belgrade Nikola Tesla Airport",
+   "city": "Belgrade",
+   "country": "Serbia",
+   "cc": "RS",
+   "lat": 44.8184,
+   "lon": 20.3091,
+   "size": "L"
+  },
+  "NAP": {
+   "iata": "NAP",
+   "name": "Naples International Airport",
+   "city": "Napoli",
+   "country": "Italy",
+   "cc": "IT",
+   "lat": 40.886,
+   "lon": 14.2908,
+   "size": "L"
+  },
+  "AMS": {
+   "iata": "AMS",
+   "name": "Amsterdam Airport Schiphol",
+   "city": "Amsterdam",
+   "country": "Netherlands",
+   "cc": "NL",
+   "lat": 52.3086,
+   "lon": 4.7639,
+   "size": "L"
+  },
+  "LIN": {
+   "iata": "LIN",
+   "name": "Milano Linate Airport",
+   "city": "Segrate (MI)",
+   "country": "Italy",
+   "cc": "IT",
+   "lat": 45.4451,
+   "lon": 9.2767,
+   "size": "L"
+  },
+  "FRA": {
+   "iata": "FRA",
+   "name": "Frankfurt Main Airport",
+   "city": "Frankfurt am Main",
+   "country": "Germany",
+   "cc": "DE",
+   "lat": 50.0267,
+   "lon": 8.5584,
+   "size": "L"
+  },
+  "FCO": {
+   "iata": "FCO",
+   "name": "Rome–Fiumicino Leonardo da Vinci International Airport",
+   "city": "Rome",
+   "country": "Italy",
+   "cc": "IT",
+   "lat": 41.8045,
+   "lon": 12.252,
+   "size": "L"
+  },
+  "CDG": {
+   "iata": "CDG",
+   "name": "Charles de Gaulle International Airport",
+   "city": "Paris (Roissy-en-France, Val-d'Oise)",
+   "country": "France",
+   "cc": "FR",
+   "lat": 49.009,
+   "lon": 2.5541,
+   "size": "L"
+  },
+  "MUC": {
+   "iata": "MUC",
+   "name": "Munich Airport",
+   "city": "Munich",
+   "country": "Germany",
+   "cc": "DE",
+   "lat": 48.3538,
+   "lon": 11.7861,
+   "size": "L"
+  },
+  "ZRH": {
+   "iata": "ZRH",
+   "name": "Zürich Airport",
+   "city": "Zurich",
+   "country": "Switzerland",
+   "cc": "CH",
+   "lat": 47.4581,
+   "lon": 8.5481,
+   "size": "L"
+  },
+  "BRI": {
+   "iata": "BRI",
+   "name": "Bari Karol Wojtyła International Airport",
+   "city": "Bari",
+   "country": "Italy",
+   "cc": "IT",
+   "lat": 41.1389,
+   "lon": 16.7606,
+   "size": "L"
+  }
+ }
+}

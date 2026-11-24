@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Povero senza biga</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-in">
+    <div>
+      <h1>Povero senza biga</h1>
+      <p class="sub">voli e letti al prezzo più basso, scali lunghi inclusi</p>
+    </div>
+    <a class="logout" href="/logout">Esci</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <form id="search-form" class="card" autocomplete="off" novalidate>
+    <div class="route-row">
+      <div class="field" id="fld-from"></div>
+      <button type="button" id="swap" class="icon-btn" title="Inverti Da / A" aria-label="Inverti Da e A">⇄</button>
+      <div class="field" id="fld-to"></div>
+    </div>
+
+    <div class="grid dates">
+      <label class="lab">Andata
+        <input type="date" id="depart" required>
+      </label>
+      <label class="lab">Ritorno
+        <input type="date" id="ret">
+      </label>
+      <label class="lab chk-lab"><span class="sr">Solo andata</span>
+        <span class="chk"><input type="checkbox" id="oneway"> solo andata</span>
+      </label>
+      <label class="lab">Flessibilità
+        <select id="flex">
+          <option value="0">esatta</option>
+          <option value="1">± 1 giorno</option>
+          <option value="2">± 2 giorni</option>
+          <option value="3">± 3 giorni</option>
+        </select>
+      </label>
+      <label class="lab">Adulti
+        <input type="number" id="adults" min="1" max="9" value="1" inputmode="numeric">
+      </label>
+      <label class="lab">Ore minime a destinazione
+        <input type="number" id="minhours" min="0" max="72" value="3" inputmode="numeric">
+      </label>
+    </div>
+
+    <details class="sub-box" id="ret-airports">
+      <summary>Ritorno da/verso aeroporti diversi</summary>
+      <p class="hint">Lascia vuoto per usare i default: ritorno da «A» verso «Da».</p>
+      <div class="route-row">
+        <div class="field" id="fld-rfrom"></div>
+        <span class="arrow-sep">→</span>
+        <div class="field" id="fld-rto"></div>
+      </div>
+    </details>
+
+    <details class="sub-box" id="filters-box">
+      <summary>Filtri voli</summary>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" data-tab="o" role="tab">Andata</button>
+        <button type="button" class="tab" data-tab="i" role="tab">Ritorno</button>
+      </div>
+      <div class="fpanels" id="fpanels"></div>
+    </details>
+
+    <div class="submit-row">
+      <div id="estimate" class="estimate"></div>
+      <button type="submit" id="go" class="primary">Cerca voli</button>
+    </div>
+    <div id="form-error" class="msg err" hidden></div>
+  </form>
+
+  <section id="progress" class="card progress" hidden aria-live="polite">
+    <div class="spinner" aria-hidden="true"></div>
+    <div><strong id="prog-text"></strong><div class="hint" id="prog-sub"></div></div>
+  </section>
+
+  <section id="results" hidden></section>
+</main>
+
+<footer class="wrap foot">Povero senza biga · uso personale</footer>
+<script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+services:
+  web:
+    build: .
+    container_name: povero-senza-biga
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${HOST_PORT:-8000}:8000"
