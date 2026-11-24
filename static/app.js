@@ -565,3 +565,6 @@ function init() {
   updateEstimate();
 }
 document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  api('/api/me').then(m => { if (m && m.auth_required) $('#logout').hidden = false; }).catch(() => {});
+});

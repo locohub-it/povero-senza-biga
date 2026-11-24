@@ -175,6 +175,12 @@ def api_stays(
 
 # ---------- pagine ----------
 
+@app.get("/api/me")
+def api_me():
+    """Dice al frontend se il sito è protetto da password (per mostrare «Esci»)."""
+    return {"auth_required": bool(settings.app_password)}
+
+
 @app.get("/healthz")
 def healthz():
     return {"ok": True}

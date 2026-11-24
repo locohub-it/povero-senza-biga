@@ -4,78 +4,101 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Povero e senza biga</title>
+<meta name="description" content="Voli low cost da più aeroporti in un colpo solo, scali lunghi come città gratis e letti sotto i 40 euro.">
+<title>Povero e senza biga · voli e letti low cost</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<header class="top">
-  <div class="wrap top-in">
-    <div>
-      <h1>Povero e senza biga</h1>
-      <p class="sub">voli e letti al prezzo più basso, scali lunghi inclusi</p>
-    </div>
-    <a class="logout" href="/logout">Esci</a>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="/" aria-label="Povero e senza biga, home">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="currentColor"/><path d="M8 18.5l16-6.2c1-.4 2 .6 1.5 1.5l-1 1.6-6.6 2.6-2.4 6.2-1.8.7.6-5.6-4.3 1.7-1.6 2.3-1.3.5.4-3.2-2-.8z" fill="var(--brand-ink)"/></svg>
+      <span>Povero <em>e</em> senza biga</span>
+    </a>
+    <nav class="nav-links" aria-label="Sezioni">
+      <a href="#come-funziona">Come funziona</a>
+      <a href="#scali">Città gratis</a>
+      <a href="#dormire">Dormire low cost</a>
+      <a href="#consigli">Consigli</a>
+      <a class="logout" id="logout" href="/logout" hidden>Esci</a>
+    </nav>
   </div>
 </header>
 
-<main class="wrap">
-  <form id="search-form" class="card" autocomplete="off" novalidate>
-    <div class="route-row">
-      <div class="field" id="fld-from"></div>
-      <button type="button" id="swap" class="icon-btn" title="Inverti Da / A" aria-label="Inverti Da e A">⇄</button>
-      <div class="field" id="fld-to"></div>
+<section class="hero">
+  <svg class="hero-art" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <path d="M-20 300 C 250 120, 520 80, 760 150 S 1120 260, 1240 60" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="2 12" stroke-linecap="round"/>
+    <circle cx="140" cy="232" r="6" fill="currentColor"/>
+    <circle cx="760" cy="150" r="6" fill="currentColor"/>
+    <g transform="translate(1040 182) rotate(-35)"><path d="M-22 4l40-15c2.6-1 5 1.4 3.8 3.8l-2.4 4-16.5 6.4-6 15.4-4.4 1.7 1.4-14-10.6 4.2-4 5.6-3.2 1.3 1-8-5-2z" fill="currentColor"/></g>
+  </svg>
+  <div class="wrap hero-in">
+    <p class="eyebrow">Viaggi improvvisati, budget da studente</p>
+    <h1>Il mondo costa meno<br>di quanto pensi.</h1>
+    <p class="lead">Cerca da tutti gli aeroporti vicini in un colpo solo, trasforma gli scali lunghi in città gratis e trova un letto senza spendere una fortuna.</p>
+  </div>
+</section>
+
+<main class="wrap main">
+  <form id="search-form" class="search" autocomplete="off" novalidate>
+    <div class="search-main">
+      <div class="route-row">
+        <div class="field" id="fld-from"></div>
+        <button type="button" id="swap" class="icon-btn" title="Inverti Da / A" aria-label="Inverti Da e A">⇄</button>
+        <div class="field" id="fld-to"></div>
+      </div>
+      <div class="when">
+        <label class="lab">Andata
+          <input type="date" id="depart" required>
+        </label>
+        <label class="lab">Ritorno
+          <input type="date" id="ret">
+        </label>
+      </div>
+      <button type="submit" id="go" class="primary">Cerca voli</button>
     </div>
 
-    <div class="grid dates">
-      <label class="lab">Andata
-        <input type="date" id="depart" required>
-      </label>
-      <label class="lab">Ritorno
-        <input type="date" id="ret">
-      </label>
-      <label class="lab chk-lab"><span class="sr">Solo andata</span>
-        <span class="chk"><input type="checkbox" id="oneway"> solo andata</span>
-      </label>
-      <label class="lab">Flessibilità
+    <div class="search-opts">
+      <label class="chk"><input type="checkbox" id="oneway"> Solo andata</label>
+      <label class="opt">Flessibilità
         <select id="flex">
-          <option value="0">esatta</option>
+          <option value="0">date esatte</option>
           <option value="1">± 1 giorno</option>
           <option value="2">± 2 giorni</option>
           <option value="3">± 3 giorni</option>
         </select>
       </label>
-      <label class="lab">Adulti
+      <label class="opt">Adulti
         <input type="number" id="adults" min="1" max="9" value="1" inputmode="numeric">
       </label>
-      <label class="lab">Ore minime a destinazione
+      <label class="opt">Ore minime a destinazione
         <input type="number" id="minhours" min="0" max="72" value="3" inputmode="numeric">
       </label>
     </div>
 
-    <details class="sub-box" id="ret-airports">
-      <summary>Ritorno da/verso aeroporti diversi</summary>
-      <p class="hint">Lascia vuoto per usare i default: ritorno da «A» verso «Da».</p>
-      <div class="route-row">
-        <div class="field" id="fld-rfrom"></div>
-        <span class="arrow-sep">→</span>
-        <div class="field" id="fld-rto"></div>
-      </div>
-    </details>
-
-    <details class="sub-box" id="filters-box">
-      <summary>Filtri voli</summary>
-      <div class="tabs" role="tablist">
-        <button type="button" class="tab active" data-tab="o" role="tab">Andata</button>
-        <button type="button" class="tab" data-tab="i" role="tab">Ritorno</button>
-      </div>
-      <div class="fpanels" id="fpanels"></div>
-    </details>
-
-    <div class="submit-row">
-      <div id="estimate" class="estimate"></div>
-      <button type="submit" id="go" class="primary">Cerca voli</button>
+    <div class="search-more">
+      <details class="sub-box" id="filters-box">
+        <summary>Orari, scali e prezzo</summary>
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab active" data-tab="o" role="tab">Andata</button>
+          <button type="button" class="tab" data-tab="i" role="tab">Ritorno</button>
+        </div>
+        <div class="fpanels" id="fpanels"></div>
+      </details>
+      <details class="sub-box" id="ret-airports">
+        <summary>Ritorno da/verso aeroporti diversi</summary>
+        <p class="hint">Lascia vuoto per tornare da «A» verso «Da».</p>
+        <div class="route-row">
+          <div class="field" id="fld-rfrom"></div>
+          <span class="arrow-sep">→</span>
+          <div class="field" id="fld-rto"></div>
+        </div>
+      </details>
     </div>
+
+    <div id="estimate" class="estimate"></div>
     <div id="form-error" class="msg err" hidden></div>
   </form>
 
@@ -87,7 +110,84 @@
   <section id="results" hidden></section>
 </main>
 
-<footer class="wrap foot">Povero e senza biga · uso personale</footer>
+<section class="band" id="come-funziona">
+  <div class="wrap">
+    <h2 class="sec-title">Come funziona</h2>
+    <p class="sec-lead">I comparatori classici ti fanno cercare un aeroporto alla volta. Qui metti dentro tutti quelli che hai vicino e il sito prova ogni combinazione per te.</p>
+    <ol class="steps">
+      <li>
+        <span class="step-n">1</span>
+        <h3>Tutti gli aeroporti, una ricerca</h3>
+        <p>Vivi tra Napoli e Bari? Metti entrambi in partenza, e se vuoi anche più arrivi. Andata e ritorno sono cercati separatamente, così puoi partire da uno e rientrare nell'altro.</p>
+      </li>
+      <li>
+        <span class="step-n">2</span>
+        <h3>Orari che hanno senso</h3>
+        <p>Il volo più economico atterra a mezzanotte e la reception è chiusa? Imposta «arrivo entro le 20» e spariscono i voli che ti lascerebbero in strada.</p>
+      </li>
+      <li>
+        <span class="step-n">3</span>
+        <h3>Le combinazioni migliori</h3>
+        <p>Il sito mette insieme andate e ritorni compatibili, anche di compagnie diverse, e ti mostra il totale più basso in cima.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="band band-feature" id="scali">
+  <div class="wrap feature">
+    <div>
+      <p class="eyebrow">Scali lunghi</p>
+      <h2 class="sec-title">Uno scalo di 12 ore è una città gratis.</h2>
+      <p class="sec-lead">Gli altri siti nascondono gli scali lunghi. Qui sono evidenziati, e con un filtro puoi cercare solo quelli: esci dall'aeroporto, visiti la città e riparti con lo stesso biglietto.</p>
+    </div>
+    <div class="ticket" aria-label="Esempio di itinerario con scalo lungo">
+      <div class="t-row"><b>BRI</b><span class="t-line"></span><b>FCO</b><span class="t-line"></span><b>BCN</b></div>
+      <div class="t-row t-sub"><span>Bari 19:30</span><span class="t-free">12 h a Roma</span><span>Barcellona 10:50</span></div>
+      <div class="t-price">96 € <small>con una giornata a Roma inclusa</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="dormire">
+  <div class="wrap">
+    <h2 class="sec-title">Dormire spendendo poco</h2>
+    <p class="sec-lead">Niente hotel a 4 stelle in vetrina. Per ogni destinazione, e per le città degli scali lunghi, trovi ricerche già filtrate per budget.</p>
+    <div class="cards">
+      <div class="info-card"><h3>Ostelli</h3><p>Letti in camerata su Hostelworld e Booking: spesso 15–30 € a notte.</p></div>
+      <div class="info-card"><h3>B&amp;B e affittacamere</h3><p>Su Booking solo strutture economiche, ordinate dal prezzo più basso e con tetto massimo a notte.</p></div>
+      <div class="info-card"><h3>Stanze private</h3><p>Su Airbnb solo stanze in casa d'altri, non appartamenti interi, sotto il tuo budget.</p></div>
+      <div class="info-card"><h3>Divano gratis</h3><p>Couchsurfing: ospitalità gratuita dai locali, per chi si adatta a tutto.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="consigli">
+  <div class="wrap">
+    <h2 class="sec-title">Consigli da povero</h2>
+    <ul class="tips">
+      <li><b>Solo bagaglio a mano.</b> Le tariffe base delle low cost includono solo uno zaino sotto il sedile: controlla misure e peso prima di prenotare.</li>
+      <li><b>Check-in online.</b> Alcune compagnie fanno pagare il check-in in aeroporto: fallo dall'app appena si apre.</li>
+      <li><b>Occhio agli aeroporti lontani.</b> Girona per Barcellona o Beauvais per Parigi: somma il prezzo del bus prima di esultare.</li>
+      <li><b>Biglietti separati.</b> Se combini compagnie diverse, una coincidenza persa non è coperta: lascia sempre un margine ampio.</li>
+      <li><b>Date flessibili.</b> Spostarsi di un giorno spesso dimezza il prezzo: prova la flessibilità ± 1–3 giorni.</li>
+    </ul>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="wrap footer-in">
+    <div>
+      <div class="brand brand-foot"><span>Povero <em>e</em> senza biga</span></div>
+      <p>Voli e letti al prezzo più basso, scali lunghi inclusi.</p>
+    </div>
+    <div class="footer-note">
+      <p>Prezzi indicativi da Google Flights: verifica sempre sul sito della compagnia prima di prenotare.</p>
+      <p>Progetto personale e open source · <a href="https://github.com/locohub-it/povero-senza-biga" rel="noopener">GitHub</a></p>
+    </div>
+  </div>
+</footer>
+
 <script src="/static/app.js"></script>
 </body>
 </html>
