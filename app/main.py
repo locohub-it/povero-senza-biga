@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from . import auth
 from .config import settings
 from .filters import FlightFilters, parse_hhmm
-from .search import SearchRequest, TooManyQueries, run_search
+from .search import MAX_TRIP_LEGS, SearchRequest, TooManyQueries, TripLeg, run_search
 from .stays import stay_links
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -109,17 +109,17 @@ class FiltersIn(BaseModel):
         )
 
 
-class SearchIn(BaseModel):
-    origins: list[str] = Field(..., min_length=1, max_length=6)
+class LegIn(BaseModel):
+    origins: list[str] = Field(default_factory=list, max_length=6)  # vuoto = arrivi della tappa precedente
     destinations: list[str] = Field(..., min_length=1, max_length=6)
-    depart_date: str
-    return_date: str | None = None
-    return_origins: list[str] = Field(default_factory=list, max_length=6)
-    return_destinations: list[str] = Field(default_factory=list, max_length=6)
+    date: str
+    filters: FiltersIn = Field(default_factory=FiltersIn)
+
+
+class SearchIn(BaseModel):
+    legs: list[LegIn] = Field(..., min_length=1, max_length=MAX_TRIP_LEGS)
     flex_days: int = Field(0, ge=0, le=3)
     adults: int = Field(1, ge=1, le=9)
-    outbound_filters: FiltersIn = Field(default_factory=FiltersIn)
-    inbound_filters: FiltersIn = Field(default_factory=FiltersIn)
     min_hours_at_destination: int = Field(3, ge=0, le=72)
 
 
@@ -127,16 +127,12 @@ class SearchIn(BaseModel):
 async def api_search(body: SearchIn):
     try:
         req = SearchRequest(
-            origins=body.origins,
-            destinations=body.destinations,
-            depart_date=body.depart_date,
-            return_date=body.return_date or None,
-            return_origins=body.return_origins,
-            return_destinations=body.return_destinations,
+            legs=[
+                TripLeg(origins=l.origins, destinations=l.destinations, date=l.date, filters=l.filters.to_filters())
+                for l in body.legs
+            ],
             flex_days=body.flex_days,
             adults=body.adults,
-            outbound_filters=body.outbound_filters.to_filters(),
-            inbound_filters=body.inbound_filters.to_filters(),
             min_hours_at_destination=body.min_hours_at_destination,
         )
         result = await run_search(req)
@@ -145,12 +141,12 @@ async def api_search(body: SearchIn):
     except ValueError as exc:
         raise HTTPException(400, str(exc))
     # arricchisci con nomi città degli aeroporti coinvolti
-    codes = {i["origin"] for i in result["outbound"] + result["inbound"]} | {
-        i["destination"] for i in result["outbound"] + result["inbound"]
-    }
-    for it in result["outbound"] + result["inbound"]:
-        for s in it["segments"]:
-            codes.update((s["origin"], s["destination"]))
+    codes: set[str] = set()
+    for leg in result["legs"]:
+        codes.update(leg["origins"]); codes.update(leg["destinations"])
+        for it in leg["itineraries"]:
+            for s in it["segments"]:
+                codes.update((s["origin"], s["destination"]))
     by = airports_by_iata()
     result["airports"] = {c: _public(by[c]) for c in codes if c in by}
     return result

@@ -24,6 +24,26 @@ TYPE_ORDER = {"large_airport": 0, "medium_airport": 1, "small_airport": 2}
 SIZE_CODE = {"large_airport": "L", "medium_airport": "M", "small_airport": "S"}
 IATA_RE = re.compile(r"^[A-Z]{3}$")
 
+# Città servita per aeroporti il cui "municipality" è il comune dell'aeroporto
+# (serve per cercare alloggi e per mostrare un nome comprensibile).
+SERVED_CITY = {
+    "MXP": "Milano", "LIN": "Milano", "BGY": "Bergamo", "CIA": "Roma", "FCO": "Roma",
+    "TRN": "Torino", "VRN": "Verona", "AOI": "Ancona", "CUF": "Cuneo", "TSF": "Treviso",
+    "BVA": "Paris", "CRL": "Brussels", "BRU": "Brussels", "NYO": "Stockholm", "WMI": "Warsaw",
+    "KRK": "Kraków", "OTP": "Bucharest", "ATH": "Athens", "TIA": "Tirana", "MRS": "Marseille",
+    "LYS": "Lyon", "SAW": "Istanbul", "LTN": "London", "STN": "London", "BSL": "Basel",
+    "MLA": "Valletta", "HHN": "Hahn",
+}
+
+
+def clean_city(iata: str, municipality: str) -> str:
+    """Nome della città: correzioni note, poi via provincia/dettagli ("Pisa (PI)" -> "Pisa")."""
+    if iata in SERVED_CITY:
+        return SERVED_CITY[iata]
+    city = re.sub(r"\s*\(.*?\)", "", municipality)
+    city = city.split(",")[0].split("/")[0].strip()
+    return city or municipality
+
 
 def download_text(url: str) -> str:
     request = urllib.request.Request(url, headers={"User-Agent": "airports-json-builder/1.0"})
@@ -55,7 +75,7 @@ def build_records(airports_text: str, country_names: dict[str, str]) -> list[dic
             {
                 "iata": iata,
                 "name": row.get("name", ""),
-                "city": row.get("municipality", ""),
+                "city": clean_city(iata, row.get("municipality", "")),
                 "country": country_names.get(cc, ""),
                 "cc": cc,
                 "continent": row.get("continent", ""),

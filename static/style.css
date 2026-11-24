@@ -386,3 +386,36 @@ body.login { display: flex; min-height: 100vh; align-items: center; justify-cont
 .pday.on .pbar { background: var(--accent); }
 .pday.none .pbar-wrap::after { content: ""; width: 70%; max-width: 34px; border-top: 2px dashed var(--line); }
 .pdate { font-size: .72rem; color: var(--muted); text-align: center; white-space: nowrap; }
+
+/* ---------- catena di aeroporti (tappe) ---------- */
+.stops { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 10px; }
+.stop { position: relative; flex: 1 1 240px; min-width: 0; }
+.stop .field { min-width: 0; }
+.stop-x { display: none; position: absolute; top: -2px; right: 0; border: 0; background: transparent; color: var(--muted); font-size: 1.1rem; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+.stop.removable .stop-x { display: block; }
+.stop-x:hover { color: var(--bad); background: var(--bad-bg); }
+.stop-sep { flex: none; align-self: flex-start; margin-top: 30px; }
+.stop-sep.arrow { color: var(--muted); font-size: 1.1rem; width: 20px; text-align: center; }
+.stops .icon-btn { margin-top: 26px; }
+.stop-actions { flex: 1 1 100%; display: flex; gap: 8px; flex-wrap: wrap; }
+.add-stop { display: inline-flex; align-items: center; gap: 6px; border: 1px dashed var(--ctp-surface2); background: transparent; color: var(--accent); border-radius: 10px; padding: 6px 12px; font-size: .88rem; font-weight: 600; }
+.add-stop span { font-size: 1.05rem; line-height: 1; }
+.add-stop:hover:not(:disabled) { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
+.add-stop:disabled { opacity: .45; cursor: not-allowed; }
+@media (min-width: 720px) { .stop-actions { flex: 0 0 auto; align-self: flex-start; margin-top: 26px; flex-direction: column; gap: 6px; } }
+@media (max-width: 719px) {
+  .stop { flex-basis: 100%; }
+  .stop-sep { margin: -4px auto; transform: rotate(90deg); }
+  .stop-sep.arrow { width: 100%; transform: none; margin: -6px 0; }
+}
+
+.dates-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 14px; align-items: end; }
+@media (min-width: 720px) { .dates-row { grid-template-columns: minmax(0, 1fr) auto; } }
+.dates { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.date-lab .date-t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tabs.single { display: none; }
+@media (min-width: 820px) { .tabs { display: none; } }
+@media (max-width: 719px) {
+  .stop-sep.arrow { flex-basis: 100%; text-align: center; font-size: 0; margin: -6px 0; }
+  .stop-sep.arrow::after { content: "↓"; font-size: 1.1rem; }
+}

@@ -82,9 +82,11 @@ function makeChipField(key, rootId, label, placeholder) {
   const input = h('input', { type: 'text', placeholder, autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', 'aria-label': label, enterkeyhint: 'done' });
   const list = h('ul', { class: 'ac', role: 'listbox', hidden: true });
   const groupsEl = h('div', { class: 'groups' });
-  root.append(h('span', { class: 'lab-t' }, label), box, groupsEl);
+  const labEl = h('span', { class: 'lab-t' }, label);
+  root.append(labEl, box, groupsEl);
   box.append(input, list);
   let results = [], active = -1, seq = 0;
+  const f = { placeholder };
 
   const fire = () => document.dispatchEvent(new CustomEvent('formchange'));
   function renderChips() {
@@ -95,7 +97,7 @@ function makeChipField(key, rootId, label, placeholder) {
         h('b', { text: c }), a ? h('small', { text: a.city }) : null,
         h('button', { type: 'button', 'aria-label': 'Rimuovi ' + c, onclick: () => { remove(c); input.focus(); } }, '×')), input);
     });
-    input.placeholder = codes.length ? '' : placeholder;
+    input.placeholder = codes.length ? '' : f.placeholder;
     renderGroups();
   }
   function add(code) {
@@ -169,7 +171,9 @@ function makeChipField(key, rootId, label, placeholder) {
       saveGroups(); Object.values(chipFields).forEach(f => f.renderGroups());
     } }, '★ Salva come gruppo'));
   }
-  const f = { codes, set, add, renderGroups };
+  f.codes = codes; f.set = set; f.add = add; f.renderGroups = renderGroups;
+  f.setLabel = t => { labEl.textContent = t; input.setAttribute('aria-label', t); };
+  f.setPlaceholder = t => { f.placeholder = t; input.placeholder = codes.length ? '' : t; };
   chipFields[key] = f;
   renderChips();
   return f;
@@ -182,7 +186,7 @@ function filterPanel(dir, title) {
   const tm = n => h('input', { type: 'time', 'data-f': p(n) });
   const lab = (t, el, cls) => h('label', { class: 'lab' + (cls ? ' ' + cls : '') }, t, el);
   const setv = (n, v) => { const e = $(`[data-f="${p(n)}"]`); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); };
-  return h('div', { class: 'fpanel' + (dir === 'o' ? ' active' : ''), 'data-panel': dir },
+  return h('div', { class: 'fpanel' + (dir === '0' ? ' active' : ''), 'data-panel': dir },
     h('h3', null, title),
     h('div', { class: 'fgrid' },
       lab('Partenza dalle', tm('depart_from')), lab('Partenza alle', tm('depart_to')),
@@ -202,58 +206,208 @@ function filterPanel(dir, title) {
     h('div', { class: 'inline' }, 'Scalo lungo da', h('input', { type: 'number', 'data-f': p('threshold'), min: 1, step: 'any', value: 6, inputmode: 'decimal' }), 'ore'));
 }
 
-/* ---------- stato del form ---------- */
+/* ---------- stato del form: catena di aeroporti (tappe) ---------- */
 const el = {};
+const MAX_STOPS = 6; // 6 gruppi di aeroporti = 5 voli
+const stops = [];    // [{ id, field, wrap }]
+let dateInputs = []; // una data per volo
+let stopSeq = 0;
+
+const legCount = () => Math.max(0, stops.length - 1);
+const stopLabel = i => i === 0 ? 'Da' : i === 1 ? 'A' : `Poi verso`;
+function legName(i, codesFrom, codesTo) {
+  const n = legCount();
+  const route = (codesFrom && codesFrom.length ? codesFrom.join('/') : '…') + ' → ' + (codesTo && codesTo.length ? codesTo.join('/') : '…');
+  if (n === 2 && i === 1 && isRoundTrip()) return `Ritorno · ${route}`;
+  if (n === 2 && i === 0 && isRoundTrip()) return `Andata · ${route}`;
+  return `Volo ${i + 1} · ${route}`;
+}
+function isRoundTrip() {
+  if (stops.length !== 3) return false;
+  const a = stops[0].field.codes, c = stops[2].field.codes;
+  return a.length > 0 && c.length > 0 && c.every(x => a.includes(x));
+}
+
+function addStop(codes, opts) {
+  if (stops.length >= MAX_STOPS) return null;
+  const id = 'stop-' + (++stopSeq);
+  const fieldRoot = h('div', { class: 'field', id });
+  const removeBtn = h('button', { type: 'button', class: 'stop-x', title: 'Rimuovi questa tappa', 'aria-label': 'Rimuovi questa tappa' }, '×');
+  const wrap = h('div', { class: 'stop' }, fieldRoot, removeBtn);
+  $('#stops').append(wrap);
+  const field = makeChipField(id, id, '', 'Città o codice…');
+  const st = { id, field, wrap };
+  removeBtn.addEventListener('click', () => removeStop(st));
+  stops.push(st);
+  if (codes && codes.length) field.set(codes);
+  if (!(opts && opts.silent)) layoutStops();
+  return st;
+}
+function removeStop(st) {
+  const i = stops.indexOf(st);
+  if (i < 2) return; // Da e A restano sempre
+  stops.splice(i, 1);
+  st.wrap.remove();
+  delete chipFields[st.id];
+  layoutStops();
+}
+function layoutStops() {
+  const box = $('#stops');
+  // ricostruisci l'ordine: stop, separatore, stop, ...
+  box.querySelectorAll('.stop-sep').forEach(n => n.remove());
+  stops.forEach((st, i) => {
+    st.field.setLabel(stopLabel(i));
+    st.field.setPlaceholder(i === 0 ? 'Città o codice (es. BRI)…' : i === 1 ? 'Città o codice (es. MXP)…' : 'Città o codice (es. TRN)…');
+    st.wrap.classList.toggle('removable', i >= 2);
+    box.append(st.wrap);
+    if (i < stops.length - 1) {
+      const sep = i === 0 && stops.length === 2
+        ? h('button', { type: 'button', class: 'icon-btn stop-sep', title: 'Inverti Da / A', 'aria-label': 'Inverti Da e A', onclick: swapFirst }, '⇄')
+        : h('span', { class: 'stop-sep arrow', 'aria-hidden': 'true' }, '→');
+      box.append(sep);
+    }
+  });
+  const actions = h('div', { class: 'stop-actions' },
+    h('button', { type: 'button', class: 'add-stop', 'aria-label': 'Aggiungi tappa', disabled: stops.length >= MAX_STOPS, onclick: () => { const s = addStop([]); if (s) s.wrap.querySelector('input').focus(); } },
+      h('span', { 'aria-hidden': 'true' }, '+'), ' Aggiungi tappa'),
+    h('button', { type: 'button', class: 'add-stop home', disabled: stops.length >= MAX_STOPS || !stops[0].field.codes.length,
+      title: 'Aggiunge un ultimo volo verso gli aeroporti di partenza', 'aria-label': 'Ritorno a casa',
+      onclick: () => addStop(stops[0].field.codes.slice()) },
+      h('span', { 'aria-hidden': 'true' }, '↩'), ' Ritorno a casa'));
+  box.querySelectorAll('.stop-actions').forEach(n => n.remove());
+  box.append(actions);
+  syncDates();
+  rebuildFilters();
+  document.dispatchEvent(new CustomEvent('formchange'));
+}
+function swapFirst() {
+  if (stops.length !== 2) return;
+  const a = stops[0].field.codes.slice(), b = stops[1].field.codes.slice();
+  stops[0].field.set(b); stops[1].field.set(a);
+}
+
+function syncDates() {
+  const box = $('#dates');
+  const old = dateInputs.map(i => i.value);
+  const n = legCount();
+  box.replaceChildren();
+  dateInputs = [];
+  const today = new Date().toISOString().slice(0, 10);
+  for (let i = 0; i < n; i++) {
+    const inp = h('input', { type: 'date', required: true, min: today });
+    inp.value = old[i] || '';
+    const lab = h('label', { class: 'lab date-lab' }, h('span', { class: 'date-t', text: legName(i, stops[i].field.codes, stops[i + 1].field.codes) }), inp);
+    inp.addEventListener('change', () => {
+      // le date successive non possono essere prima di questa
+      for (let j = i + 1; j < dateInputs.length; j++) {
+        dateInputs[j].min = inp.value || today;
+        if (dateInputs[j].value && inp.value && dateInputs[j].value < inp.value) dateInputs[j].value = inp.value;
+      }
+    });
+    dateInputs.push(inp);
+    box.append(lab);
+  }
+  for (let j = 1; j < dateInputs.length; j++) dateInputs[j].min = dateInputs[j - 1].value || today;
+}
+function refreshDateLabels() {
+  $('#dates').querySelectorAll('.date-t').forEach((t, i) => {
+    if (stops[i + 1]) t.textContent = legName(i, stops[i].field.codes, stops[i + 1].field.codes);
+  });
+}
+
+function rebuildFilters() {
+  const saved = {};
+  document.querySelectorAll('[data-f]').forEach(e => { saved[e.dataset.f] = e.type === 'checkbox' ? e.checked : e.value; });
+  const tabs = $('#ftabs'), panels = $('#fpanels');
+  const activeTab = (tabs.querySelector('.tab.active') || {}).dataset;
+  tabs.replaceChildren(); panels.replaceChildren();
+  const n = Math.max(1, legCount());
+  for (let i = 0; i < n; i++) {
+    const title = stops[i + 1] ? legName(i, stops[i].field.codes, stops[i + 1].field.codes) : `Volo ${i + 1}`;
+    tabs.append(h('button', { type: 'button', class: 'tab', 'data-tab': String(i), role: 'tab' }, title.split(' · ')[0]));
+    panels.append(filterPanel(String(i), title));
+  }
+  document.querySelectorAll('[data-f]').forEach(e => {
+    if (!(e.dataset.f in saved)) return;
+    if (e.type === 'checkbox') e.checked = !!saved[e.dataset.f]; else e.value = saved[e.dataset.f];
+  });
+  const want = activeTab && activeTab.tab && Number(activeTab.tab) < n ? activeTab.tab : '0';
+  selectTab(want);
+  tabs.classList.toggle('single', n === 1);
+}
+function selectTab(k) {
+  document.querySelectorAll('#ftabs .tab').forEach(x => x.classList.toggle('active', x.dataset.tab === k));
+  document.querySelectorAll('#fpanels .fpanel').forEach(p => p.classList.toggle('active', p.dataset.panel === k));
+}
+
 function collectForm() {
   const filters = {};
   document.querySelectorAll('[data-f]').forEach(e => { filters[e.dataset.f] = e.type === 'checkbox' ? e.checked : e.value; });
   return {
-    from: chipFields.from.codes.slice(), to: chipFields.to.codes.slice(),
-    rfrom: chipFields.rfrom.codes.slice(), rto: chipFields.rto.codes.slice(),
-    depart: el.depart.value, ret: el.ret.value, oneway: el.oneway.checked,
+    v: 2,
+    stops: stops.map(s => s.field.codes.slice()),
+    dates: dateInputs.map(i => i.value),
     flex: el.flex.value, adults: el.adults.value, minhours: el.minhours.value,
     filters,
   };
 }
-function restoreForm(s) {
-  if (!s || typeof s !== 'object') return;
-  chipFields.from.set(s.from); chipFields.to.set(s.to); chipFields.rfrom.set(s.rfrom); chipFields.rto.set(s.rto);
-  if ((s.rfrom && s.rfrom.length) || (s.rto && s.rto.length)) $('#ret-airports').open = true;
-  const today = new Date().toISOString().slice(0, 10);
-  el.depart.value = s.depart && s.depart >= today ? s.depart : '';
-  el.ret.value = s.ret && s.ret >= today && s.ret >= el.depart.value ? s.ret : '';
-  el.oneway.checked = !!s.oneway;
-  if (s.flex != null) el.flex.value = s.flex;
-  if (s.adults) el.adults.value = s.adults;
-  if (s.minhours != null && s.minhours !== '') el.minhours.value = s.minhours;
-  if (s.filters) {
-    let any = false;
-    document.querySelectorAll('[data-f]').forEach(e => {
-      if (!(e.dataset.f in s.filters)) return;
-      const v = s.filters[e.dataset.f];
-      if (e.type === 'checkbox') e.checked = !!v; else e.value = v;
-      if (v && e.type !== 'checkbox' && !(e.dataset.f.endsWith('threshold') && String(v) === '6')) any = true;
-      if (v === true) any = true;
-    });
-    if (any) $('#filters-box').open = true;
+function migrateForm(s) {
+  // vecchio formato (Da/A + data ritorno) -> catena di tappe
+  if (!s || typeof s !== 'object' || s.v === 2) return s;
+  const st = [s.from || [], s.to || []];
+  const dates = [s.depart || ''];
+  if (!s.oneway && s.ret) {
+    st.push((s.rto && s.rto.length) ? s.rto : (s.from || []));
+    dates.push(s.ret);
   }
-  syncOneway();
+  const filters = {};
+  Object.entries(s.filters || {}).forEach(([k, v]) => { filters[k.replace(/^o\./, '0.').replace(/^i\./, '1.')] = v; });
+  return { v: 2, stops: st, dates, flex: s.flex, adults: s.adults, minhours: s.minhours, filters };
 }
-function syncOneway() {
-  el.ret.disabled = el.oneway.checked;
-  if (el.oneway.checked) el.ret.value = '';
+function restoreForm(s) {
+  s = migrateForm(s);
+  const today = new Date().toISOString().slice(0, 10);
+  const list = (s && Array.isArray(s.stops) && s.stops.length >= 2) ? s.stops : [[], []];
+  list.slice(0, MAX_STOPS).forEach(c => addStop(c, { silent: true }));
+  layoutStops();
+  if (s) {
+    (s.dates || []).forEach((d, i) => { if (dateInputs[i] && d && d >= today) dateInputs[i].value = d; });
+    for (let j = 1; j < dateInputs.length; j++) {
+      dateInputs[j].min = dateInputs[j - 1].value || today;
+      if (dateInputs[j].value && dateInputs[j].value < dateInputs[j].min) dateInputs[j].value = '';
+    }
+    if (s.flex != null) el.flex.value = s.flex;
+    if (s.adults) el.adults.value = s.adults;
+    if (s.minhours != null && s.minhours !== '') el.minhours.value = s.minhours;
+    if (s.filters) {
+      let any = false;
+      document.querySelectorAll('[data-f]').forEach(e => {
+        if (!(e.dataset.f in s.filters)) return;
+        const v = s.filters[e.dataset.f];
+        if (e.type === 'checkbox') e.checked = !!v; else e.value = v;
+        if (v && e.type !== 'checkbox' && !(e.dataset.f.endsWith('threshold') && String(v) === '6')) any = true;
+        if (v === true) any = true;
+      });
+      if (any) $('#filters-box').open = true;
+    }
+  }
 }
-const hasReturn = s => !s.oneway && !!s.ret;
+
 function estimate(s) {
-  const o = s.from.length, d = s.to.length;
-  const ro = (s.rfrom.length || d), rd = (s.rto.length || o);
-  const n = ((o * d) + (hasReturn(s) ? ro * rd : 0)) * (2 * Number(s.flex || 0) + 1);
-  return n;
+  let n = 0;
+  for (let i = 0; i < s.stops.length - 1; i++) {
+    const o = s.stops[i], d = s.stops[i + 1];
+    n += o.filter(x => !d.includes(x)).length * d.length + o.filter(x => d.includes(x)).length * (d.length - 1);
+  }
+  return n * (2 * Number(s.flex || 0) + 1);
 }
 function updateEstimate() {
   const s = collectForm(), n = estimate(s), e = $('#estimate');
-  if (!s.from.length || !s.to.length) { e.textContent = 'Scegli almeno un aeroporto di partenza e uno di arrivo.'; e.className = 'estimate'; return; }
-  e.textContent = `~${n} ${n === 1 ? 'ricerca' : 'ricerche'} su Google Flights` + (n > 48 ? ' — troppe, la richiesta potrebbe essere rifiutata o lentissima: riduci aeroporti o flessibilità.' : '');
+  refreshDateLabels();
+  const home = document.querySelector('.add-stop.home');
+  if (home) home.disabled = stops.length >= MAX_STOPS || !stops[0].field.codes.length;
+  if (s.stops.some(x => !x.length)) { e.textContent = 'Inserisci almeno un aeroporto in ogni casella.'; e.className = 'estimate'; return; }
+  e.textContent = `~${n} ${n === 1 ? 'ricerca' : 'ricerche'} su Google Flights` + (n > 48 ? ' — troppe: riduci aeroporti, tappe o flessibilità.' : '');
   e.className = 'estimate' + (n > 48 ? ' warn' : '');
 }
 
@@ -261,11 +415,11 @@ function buildFilters(s, dir) {
   const g = n => s.filters[`${dir}.${n}`];
   const numOrNull = (v, mult = 1) => { if (v === '' || v == null) return null; const x = parseFloat(v); return isFinite(x) && x >= 0 ? Math.round(x * mult) : null; };
   const th = parseFloat(g('threshold'));
-  const stops = g('max_stops');
+  const stopsSel = g('max_stops');
   return {
     depart_from: g('depart_from') || null, depart_to: g('depart_to') || null,
     arrive_from: g('arrive_from') || null, arrive_to: g('arrive_to') || null,
-    max_stops: stops === '' || stops == null ? null : Number(stops),
+    max_stops: stopsSel === '' || stopsSel == null ? null : Number(stopsSel),
     min_layover: numOrNull(g('min_layover')),
     max_layover: numOrNull(g('max_layover'), 60),
     long_layover_only: !!g('long_only'),
@@ -284,21 +438,19 @@ async function onSubmit(ev) {
   const err = $('#form-error');
   err.hidden = true;
   const fail = m => { err.textContent = m; err.hidden = false; };
-  if (!s.from.length) return fail('Scegli almeno un aeroporto di partenza.');
-  if (!s.to.length) return fail('Scegli almeno un aeroporto di arrivo.');
-  if (!s.depart) return fail('Indica la data di andata.');
-  if (hasReturn(s) && s.ret < s.depart) return fail('La data di ritorno è prima di quella di andata.');
+  if (!s.stops[0].length) return fail('Scegli almeno un aeroporto di partenza.');
+  for (let i = 1; i < s.stops.length; i++) if (!s.stops[i].length) return fail(`Manca l'aeroporto della casella ${i + 1}: compilala o rimuovila con ×.`);
+  for (let i = 0; i < s.dates.length; i++) {
+    if (!s.dates[i]) return fail(`Indica la data del volo ${i + 1}.`);
+    if (i && s.dates[i] < s.dates[i - 1]) return fail(`La data del volo ${i + 1} è prima di quella del volo ${i}.`);
+  }
   LS.set('psb_form', s);
   const body = {
-    origins: s.from, destinations: s.to, depart_date: s.depart,
-    return_date: hasReturn(s) ? s.ret : null,
+    legs: s.dates.map((d, i) => ({ origins: s.stops[i], destinations: s.stops[i + 1], date: d, filters: buildFilters(s, String(i)) })),
     flex_days: Number(s.flex) || 0,
     adults: Math.min(9, Math.max(1, parseInt(s.adults, 10) || 1)),
     min_hours_at_destination: Math.min(72, Math.max(0, parseInt(s.minhours, 10) || 0)),
-    outbound_filters: buildFilters(s, 'o'), inbound_filters: buildFilters(s, 'i'),
   };
-  if (s.rfrom.length) body.return_origins = s.rfrom;
-  if (s.rto.length) body.return_destinations = s.rto;
 
   busy = true;
   $('#go').disabled = true;
@@ -427,30 +579,57 @@ function comboLeg(tag, it, thr, data) {
     h('div', { class: 'l2' }, `${(it.airlines || []).join(', ') || '—'} · ${stopsTxt(it)} · ${fmtDur(it.duration)} `, layoverBadges(it, thr, data)));
 }
 
-function renderCombos(data, thrO, thrI) {
-  const byO = new Map(data.outbound.map(i => [i.key, i])), byI = new Map(data.inbound.map(i => [i.key, i]));
-  const combos = (data.combos || []).filter(c => byO.has(c.outbound) && byI.has(c.inbound));
-  const sec = h('section', null, h('div', { class: 'sec-head' }, h('h2', null, 'Migliori combinazioni A/R')));
-  if (!combos.length) { sec.append(h('div', { class: 'empty-state' }, 'Nessuna combinazione andata + ritorno compatibile.')); return sec; }
+function legTitle(req, i) {
+  const n = req.legs.length;
+  const l = req.legs[i];
+  const route = `${l.origins.join('/')} → ${l.destinations.join('/')}`;
+  const round = n === 2 && req.legs[1].destinations.every(x => req.legs[0].origins.includes(x));
+  if (round) return (i === 0 ? 'Andata' : 'Ritorno') + ' · ' + route;
+  return `Volo ${i + 1} · ${route}`;
+}
+
+function renderCombos(data, req, thr) {
+  const maps = data.legs.map(l => new Map(l.itineraries.map(i => [i.key, i])));
+  const combos = (data.combos || []).filter(c => c.keys.every((k, i) => maps[i] && maps[i].has(k)));
+  const n = data.legs.length;
+  const round = n === 2 && req.legs[1].destinations.every(x => req.legs[0].origins.includes(x));
+  const sec = h('section', null, h('div', { class: 'sec-head' }, h('h2', null, round ? 'Migliori combinazioni A/R' : 'Migliori combinazioni del viaggio')));
+  if (!combos.length) {
+    const empty = data.legs.filter(l => !l.itineraries.length).map(l => `volo ${l.index + 1}`);
+    sec.append(h('div', { class: 'empty-state' }, empty.length
+      ? `Nessuna combinazione: non ci sono voli per ${empty.join(', ')}. Se gli aeroporti sono vicini (es. Malpensa–Torino) conviene treno o bus: togli quella tappa e cerca i voli separatamente.`
+      : 'Nessuna combinazione compatibile: gli orari dei voli non si incastrano (prova a ridurre le «ore minime a destinazione» o a spostare le date).'));
+    return sec;
+  }
   const grid = h('div', { class: 'combos' });
   const more = h('button', { type: 'button', class: 'btn', style: 'margin-top:8px' });
   let shown = 6;
+  const tagOf = i => round ? (i === 0 ? 'Andata' : 'Ritorno') : `Volo ${i + 1}`;
   const draw = () => {
     grid.replaceChildren();
     combos.slice(0, shown).forEach(c => {
-      const o = byO.get(c.outbound), i = byI.get(c.inbound);
+      const its = c.keys.map((k, i) => maps[i].get(k));
+      const diff = c.same_airport_connections.some(x => !x) || (round && !c.returns_home);
+      const nightsTxt = c.nights.length === 1
+        ? `${c.nights[0]} ${c.nights[0] === 1 ? 'notte' : 'notti'}`
+        : c.nights.map((x, i) => `${x} ${x === 1 ? 'notte' : 'notti'} a ${airportInfo(data, its[i].destination).city}`).join(' · ');
+      const legsEls = [];
+      its.forEach((it, i) => {
+        legsEls.push(comboLeg(tagOf(i), it, thr[i], data));
+      });
       grid.append(h('div', { class: 'combo' },
         h('div', { class: 'combo-top' },
           h('span', { class: 'total', text: money(c.total) }),
-          h('span', null, h('span', { class: 'badge', text: `${c.nights} ${c.nights === 1 ? 'notte' : 'notti'}` }), ' ',
-            c.same_airports ? null : h('span', { class: 'badge diff', text: 'aeroporti diversi' }))),
-        comboLeg('Andata', o, thrO, data), comboLeg('Ritorno', i, thrI, data),
+          h('span', null, h('span', { class: 'badge', text: nightsTxt }), ' ',
+            diff ? h('span', { class: 'badge diff', text: 'aeroporti diversi' }) : null)),
+        legsEls,
         h('div', { class: 'clinks' },
-          o.booking_url ? h('a', { class: 'btn', href: o.booking_url, target: '_blank', rel: 'noopener noreferrer' }, 'Prenota andata') : null,
-          i.booking_url ? h('a', { class: 'btn', href: i.booking_url, target: '_blank', rel: 'noopener noreferrer' }, 'Prenota ritorno') : null),
-        (c.roundtrip_links && c.roundtrip_links.length) ? h('div', { class: 'clinks rt' },
-          h('span', { class: 'rt-label', text: c.same_airline ? 'Stessa compagnia, stessi aeroporti: puoi prenotare insieme' : 'Stessi aeroporti: confronta il prezzo A/R' }),
-          c.roundtrip_links.map(l => h('a', { class: 'btn fill', href: l.url, target: '_blank', rel: 'noopener noreferrer' }, l.label))) : null));
+          its.map((it, i) => it.booking_url ? h('a', { class: 'btn', href: it.booking_url, target: '_blank', rel: 'noopener noreferrer' }, round ? `Prenota ${tagOf(i).toLowerCase()}` : `Prenota volo ${i + 1}`) : null)),
+        (c.links && c.links.length) ? h('div', { class: 'clinks rt' },
+          h('span', { class: 'rt-label', text: c.same_airline
+            ? (n === 2 ? 'Stessa compagnia, stessi aeroporti: puoi prenotare insieme' : 'Stessa compagnia, tappe collegate: puoi prenotare insieme')
+            : (n === 2 ? 'Stessi aeroporti: confronta il prezzo A/R' : 'Tappe collegate: confronta il prezzo multi-città') }),
+          c.links.map(l => h('a', { class: 'btn fill', href: l.url, target: '_blank', rel: 'noopener noreferrer' }, l.label))) : null));
     });
     more.hidden = combos.length <= shown;
     more.textContent = `Mostra tutte le ${combos.length} combinazioni`;
@@ -484,23 +663,6 @@ function priceStrip(tag, days, onPick) {
   row.setSel = d => { sel = d; mark(); };
   cols.forEach(([, b]) => row.append(b));
   return h('div', { class: 'pstrip-box' }, h('div', { class: 'ptag', text: tag }), row);
-}
-
-function renderCalendar(data, lists) {
-  const cal = data.calendar || {};
-  const out = cal.outbound || [], inn = cal.inbound || [];
-  if (out.length < 2 && inn.length < 2) return null;
-  const sec = h('section', { class: 'calendar' },
-    h('div', { class: 'sec-head' }, h('h2', null, 'Prezzi per giorno')),
-    h('p', { class: 'hint', text: 'Prezzo più basso per ogni data, tra tutti gli aeroporti scelti. Tocca un giorno per vedere solo i voli di quella data.' }));
-  const pairs = [['Andata', out, lists.outbound], ['Ritorno', inn, lists.inbound]];
-  pairs.forEach(([tag, days, list]) => {
-    if (days.length < 2 || !list) return;
-    const strip = priceStrip(tag, days, d => list.setDay(d));
-    list.onDay = d => strip.querySelector('.pstrip').setSel(d);
-    sec.append(strip);
-  });
-  return sec;
 }
 
 /* ---------- alloggi ---------- */
@@ -542,6 +704,21 @@ function stayPanel({ city, country, checkin, checkout, guests, inner, title }) {
   return panel;
 }
 
+function renderCalendar(data, req, lists) {
+  const strips = data.legs.filter(l => (l.calendar || []).length >= 2);
+  if (!strips.length) return null;
+  const sec = h('section', { class: 'calendar' },
+    h('div', { class: 'sec-head' }, h('h2', null, 'Prezzi per giorno')),
+    h('p', { class: 'hint', text: 'Prezzo più basso per ogni data, tra tutti gli aeroporti scelti. Tocca un giorno per vedere solo i voli di quella data.' }));
+  strips.forEach(l => {
+    const list = lists[l.index];
+    const strip = priceStrip(legTitle(req, l.index), l.calendar, d => list.setDay(d));
+    list.onDay = d => strip.querySelector('.pstrip').setSel(d);
+    sec.append(strip);
+  });
+  return sec;
+}
+
 /* ---------- render complessivo ---------- */
 function renderResults(data, req) {
   currency = (data.stats && data.stats.currency) || 'EUR';
@@ -549,12 +726,11 @@ function renderResults(data, req) {
   const root = $('#results');
   root.replaceChildren();
   const st = data.stats || {};
-  const thrO = req.outbound_filters.long_layover_threshold, thrI = req.inbound_filters.long_layover_threshold;
-  const round = !!req.return_date;
+  const thr = req.legs.map(l => l.filters.long_layover_threshold);
+  const n = data.legs.length;
 
   root.append(h('div', { class: 'stats' },
-    h('span', { text: `Andata: ${st.outbound_found ?? 0} voli trovati, ${st.outbound_after_filters ?? 0} dopo i filtri` }),
-    round ? h('span', { text: `Ritorno: ${st.inbound_found ?? 0} voli trovati, ${st.inbound_after_filters ?? 0} dopo i filtri` }) : null,
+    data.legs.map(l => h('span', { text: `${n > 1 ? legTitle(req, l.index).split(' · ')[0] : 'Voli'}: ${l.found} trovati, ${l.after_filters} dopo i filtri` })),
     h('span', { text: `${st.queries ?? 0} ricerche` })));
 
   if (data.errors && data.errors.length) {
@@ -562,23 +738,32 @@ function renderResults(data, req) {
     data.errors.forEach(e => ul.append(h('li', { text: `${e.origin} → ${e.destination} (${fmtDate(e.date)}): ${e.error}` })));
     root.append(h('div', { class: 'msg warn' }, `Alcune ricerche sono fallite (${data.errors.length}); i risultati potrebbero essere incompleti:`, ul));
   }
-  const listOut = itineraryList('Andata', data.outbound, thrO, data, req.adults);
-  const listIn = round ? itineraryList('Ritorno', data.inbound, thrI, data, req.adults) : null;
-  if (round) root.append(renderCombos(data, thrO, thrI));
-  const calendar = renderCalendar(data, { outbound: listOut, inbound: listIn });
+
+  const lists = data.legs.map(l => itineraryList(n > 1 ? legTitle(req, l.index) : 'Voli', l.itineraries, thr[l.index], data, req.adults));
+  if (n > 1) root.append(renderCombos(data, req, thr));
+  const calendar = renderCalendar(data, req, lists);
   if (calendar) root.append(calendar);
   else if (!req.flex_days) root.append(h('p', { class: 'hint', text: 'Suggerimento: imposta la flessibilità a ± 1–3 giorni per vedere il grafico dei prezzi per giorno.' }));
-  root.append(listOut);
-  if (listIn) root.append(listIn);
+  data.legs.forEach((l, i) => {
+    if (!l.itineraries.length && !l.found) {
+      root.append(h('div', { class: 'msg warn' }, `${legTitle(req, i)}: nessun volo trovato. Se gli aeroporti sono vicini conviene treno o bus.`));
+    }
+    root.append(lists[i]);
+  });
 
-  // alloggi per ogni destinazione
+  // alloggi: in ogni tappa intermedia, dall'arrivo alla partenza successiva
   const stays = h('section', { class: 'stays' }, h('div', { class: 'sec-head' }, h('h2', null, 'Dove dormire')));
-  const seen = new Set();
-  req.destinations.forEach(code => {
-    if (seen.has(code)) return; seen.add(code);
-    const a = airportInfo(data, code);
-    const cout = req.return_date || addDays(req.depart_date, 1);
-    stays.append(stayPanel({ city: a.city, country: a.country, checkin: req.depart_date, checkout: cout, guests: req.adults, title: `Dove dormire a ${a.city} (${code})` }));
+  const home = new Set(req.legs[0].origins);
+  req.legs.forEach((l, i) => {
+    const last = i === req.legs.length - 1;
+    if (last && n > 1 && l.destinations.some(c => home.has(c))) return; // si torna a casa
+    const cout = last ? addDays(l.date, 1) : req.legs[i + 1].date;
+    const seen = new Set();
+    l.destinations.forEach(code => {
+      if (seen.has(code)) return; seen.add(code);
+      const a = airportInfo(data, code);
+      stays.append(stayPanel({ city: a.city, country: a.country, checkin: l.date, checkout: cout, guests: req.adults, title: `Dove dormire a ${a.city} (${code})` }));
+    });
   });
   stays.append(h('p', { class: 'hint', text: 'Per gli scali lunghi usa il pulsante «Dove dormire» accanto al badge «città gratis».' }));
   root.append(stays);
@@ -588,31 +773,10 @@ function renderResults(data, req) {
 
 /* ---------- init ---------- */
 function init() {
-  chipFields.from = makeChipField('from', 'fld-from', 'Da', 'Città o codice (es. NAP)…');
-  chipFields.to = makeChipField('to', 'fld-to', 'A', 'Città o codice (es. BCN)…');
-  chipFields.rfrom = makeChipField('rfrom', 'fld-rfrom', 'Ritorno da', 'vuoto = come «A»');
-  chipFields.rto = makeChipField('rto', 'fld-rto', 'Ritorno verso', 'vuoto = come «Da»');
-  ['depart', 'ret', 'oneway', 'flex', 'adults', 'minhours'].forEach(id => { el[id] = $('#' + id); });
-
-  $('#fpanels').append(filterPanel('o', 'Andata'), filterPanel('i', 'Ritorno'));
-  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
-    document.querySelectorAll('.fpanel').forEach(p => p.classList.toggle('active', p.dataset.panel === t.dataset.tab));
-  }));
-
-  $('#swap').addEventListener('click', () => {
-    const a = chipFields.from.codes.slice(), b = chipFields.to.codes.slice();
-    chipFields.from.set(b); chipFields.to.set(a);
-  });
-  el.oneway.addEventListener('change', syncOneway);
-  el.depart.addEventListener('change', () => {
-    el.ret.min = el.depart.value;
-    if (el.ret.value && el.ret.value < el.depart.value) el.ret.value = el.depart.value;
-  });
-  el.depart.min = new Date().toISOString().slice(0, 10);
+  ['flex', 'adults', 'minhours'].forEach(id => { el[id] = $('#' + id); });
+  $('#ftabs').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t) selectTab(t.dataset.tab); });
 
   restoreForm(LS.get('psb_form', null));
-  el.ret.min = el.depart.value || el.depart.min;
 
   const persist = debounce(() => { LS.set('psb_form', collectForm()); }, 400);
   const onChange = () => { updateEstimate(); persist(); };

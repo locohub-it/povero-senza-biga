@@ -1,6 +1,6 @@
 from app.flights import Itinerary, Segment
-from app.roundtrip import carrier_codes, roundtrip_links, same_carrier
-from app.search import build_combos, price_calendar
+from app.roundtrip import carrier_codes, chain_links, roundtrip_links, same_carrier
+from app.search import build_chains, price_calendar
 
 
 def it(o, d, dep, fn, price=20, arr=None, airline="X"):
@@ -41,11 +41,55 @@ def test_roundtrip_links_mixed_airlines_only_google():
     assert len(links) == 1 and links[0]["label"] == "A/R su Google Flights"
 
 
-def test_build_combos_adds_links():
+def test_chain_links_round_trip_same_airline_matches_roundtrip_links():
+    o = it("BDS", "MXP", "2026-12-25T08:35", "U21")
+    i = it("MXP", "BDS", "2027-01-03T07:00", "U22")
+    links = chain_links([o, i], 1)
+    assert links == roundtrip_links(o, i, 1)
+    assert links[0]["label"] == "A/R stessa compagnia su Google Flights"
+
+
+def test_chain_links_three_connected_legs_multicity():
+    chain = [
+        it("NAP", "BCN", "2026-12-15T09:00", "FR1", arr="2026-12-15T11:00"),
+        it("BCN", "GRO", "2026-12-17T18:00", "FR2", arr="2026-12-17T20:00"),
+        it("GRO", "NAP", "2026-12-20T18:00", "FR3"),
+    ]
+    links = chain_links(chain, 2)
+    assert len(links) == 1
+    assert links[0]["label"] == "Multi-città stessa compagnia su Google Flights"
+    assert links[0]["url"].startswith("https://www.google.com/travel/flights/search?tfs=")
+
+
+def test_chain_links_disconnected_chain_is_empty():
+    chain = [
+        it("BDS", "MXP", "2026-12-25T08:35", "U21"),
+        it("BRI", "BGY", "2027-01-03T06:00", "FR2"),
+    ]
+    assert chain_links(chain, 1) == []
+
+
+def test_build_chains_adds_links():
     outs = [it("BDS", "MXP", "2026-12-25T08:35", "U21", price=20, arr="2026-12-25T10:20")]
     ins = [it("MXP", "BDS", "2027-01-03T07:00", "U22", price=20)]
-    c = build_combos(outs, ins, 3, 10)[0]
-    assert c["total"] == 40 and c["same_airline"] and c["roundtrip_links"]
+    c = build_chains([outs, ins], 3, 10)[0]
+    assert c["total"] == 40 and c["same_airline"] and c["links"]
+
+
+def test_build_chains_min_gap_excludes_incompatible_flights():
+    first = [it("NAP", "BCN", "2026-12-15T09:00", "VY1", price=40, arr="2026-12-15T11:00")]
+    second = [
+        it("BCN", "NAP", "2026-12-15T12:00", "VY2", price=20),  # solo 1h dopo l'arrivo: scartato
+        it("BCN", "NAP", "2026-12-15T18:00", "VY3", price=50),  # ok
+    ]
+    chains = build_chains([first, second], 3, 10)
+    assert len(chains) == 1
+    assert chains[0]["total"] == 90
+    assert chains[0]["keys"] == [first[0].key, second[1].key]
+
+
+def test_build_chains_needs_two_legs():
+    assert build_chains([[it("NAP", "BCN", "2026-12-15T09:00", "VY1")]], 3, 10) == []
 
 
 def test_price_calendar():

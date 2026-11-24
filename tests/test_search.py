@@ -7,9 +7,10 @@ import pytest
 import app.search
 from app.filters import FlightFilters
 from app.flights import FlightSearchError, Itinerary, Segment
-from app.search import SearchRequest, TooManyQueries, run_search
+from app.search import SearchRequest, TooManyQueries, TripLeg, run_search
 
 DEPART = "2026-12-15"
+MID = "2026-12-17"
 RETURN = "2026-12-20"
 
 
@@ -76,14 +77,16 @@ def run(req: SearchRequest, fake):
     return asyncio.run(run_search(req, search_fn=fake))
 
 
+def round_trip(outbound_origins, outbound_dests, back_dests, depart=DEPART, back=RETURN):
+    return SearchRequest(legs=[
+        TripLeg(origins=outbound_origins, destinations=outbound_dests, date=depart),
+        TripLeg(destinations=back_dests, date=back),
+    ])
+
+
 def test_round_trip_queries_all_four_outbound_and_four_inbound_pairs():
     calls: list[tuple[str, str, str]] = []
-    req = SearchRequest(
-        origins=["NAP", "BRI"],
-        destinations=["BCN", "GRO"],
-        depart_date=DEPART,
-        return_date=RETURN,
-    )
+    req = round_trip(["NAP", "BRI"], ["BCN", "GRO"], ["NAP", "BRI"])
     result = run(req, make_fake(calls))
 
     out_calls = {c for c in calls if c[2] == DEPART}
@@ -95,31 +98,37 @@ def test_round_trip_queries_all_four_outbound_and_four_inbound_pairs():
     assert len(calls) == 8
     assert result["stats"]["queries"] == 8
     assert result["errors"] == []
+    assert [leg["index"] for leg in result["legs"]] == [0, 1]
 
 
-def test_outbound_sorted_by_price():
+def test_leg_without_origins_starts_from_previous_destinations():
+    calls: list = []
+    req = round_trip(["NAP"], ["BCN", "GRO"], ["NAP"])
+    result = run(req, make_fake(calls))
+
+    assert result["legs"][1]["origins"] == ["BCN", "GRO"]
+    assert result["legs"][1]["destinations"] == ["NAP"]
+    assert {c[:2] for c in calls if c[2] == RETURN} == {("BCN", "NAP"), ("GRO", "NAP")}
+
+
+def test_itineraries_sorted_by_price_within_leg():
     calls: list = []
     prices = {("NAP", "BCN"): 80, ("NAP", "GRO"): 30, ("BRI", "BCN"): 55, ("BRI", "GRO"): 10}
-    req = SearchRequest(origins=["NAP", "BRI"], destinations=["BCN", "GRO"], depart_date=DEPART)
+    req = SearchRequest(legs=[TripLeg(origins=["NAP", "BRI"], destinations=["BCN", "GRO"], date=DEPART)])
     result = run(req, make_fake(calls, prices=prices))
 
-    out_prices = [i["price"] for i in result["outbound"]]
+    out_prices = [i["price"] for i in result["legs"][0]["itineraries"]]
     assert out_prices == sorted(out_prices)
     assert out_prices == [10, 30, 55, 80]
-    assert result["combos"] == []  # nessun ritorno richiesto
+    assert result["combos"] == []  # una sola tappa: nessun abbinamento
 
 
 def test_combos_sorted_by_total_and_respect_min_gap():
     calls: list = []
     prices = {("NAP", "BCN"): 40, ("BRI", "BCN"): 60, ("BCN", "NAP"): 25, ("BCN", "BRI"): 15,
               ("GRO", "NAP"): 70, ("GRO", "BRI"): 90}
-    req = SearchRequest(
-        origins=["NAP", "BRI"],
-        destinations=["BCN", "GRO"],
-        depart_date=DEPART,
-        return_date=RETURN,
-        min_hours_at_destination=3,
-    )
+    req = round_trip(["NAP", "BRI"], ["BCN", "GRO"], ["NAP", "BRI"])
+    req.min_hours_at_destination = 3
     result = run(req, make_fake(calls, prices=prices))
 
     combos = result["combos"]
@@ -127,10 +136,10 @@ def test_combos_sorted_by_total_and_respect_min_gap():
     totals = [c["total"] for c in combos]
     assert totals == sorted(totals)
 
-    outs = {o["key"]: o for o in result["outbound"]}
-    ins = {i["key"]: i for i in result["inbound"]}
+    out_items = {i["key"]: i for i in result["legs"][0]["itineraries"]}
+    in_items = {i["key"]: i for i in result["legs"][1]["itineraries"]}
     for c in combos:
-        o, i = outs[c["outbound"]], ins[c["inbound"]]
+        o, i = out_items[c["keys"][0]], in_items[c["keys"][1]]
         assert c["total"] == o["price"] + i["price"]
         gap_hours = (datetime.fromisoformat(i["departure"]) - datetime.fromisoformat(o["arrival"])).total_seconds() / 3600
         assert gap_hours >= 3
@@ -140,34 +149,98 @@ def test_min_hours_at_destination_excludes_tight_connections():
     # Andata e ritorno stesso giorno: ritorno alle 12:00, andata arriva alle 11:00 -> 1h di margine.
     calls: list = []
     fake = make_fake(calls, in_times=("12:00", "14:00"), inbound_from=("BCN",))
-    base = dict(origins=["NAP"], destinations=["BCN"], depart_date=DEPART, return_date=DEPART)
 
-    strict = run(SearchRequest(**base, min_hours_at_destination=3), fake)
+    def same_day(min_hours):
+        return SearchRequest(
+            legs=[TripLeg(origins=["NAP"], destinations=["BCN"], date=DEPART),
+                  TripLeg(destinations=["NAP"], date=DEPART)],
+            min_hours_at_destination=min_hours,
+        )
+
+    strict = run(same_day(3), fake)
     assert strict["combos"] == []
 
-    loose = run(SearchRequest(**base, min_hours_at_destination=0), fake)
+    loose = run(same_day(0), fake)
     assert len(loose["combos"]) == 1
 
 
-def test_combos_can_mix_airports():
+def test_combos_can_mix_airports_and_flag_it():
     calls: list = []
     prices = {("NAP", "BCN"): 10, ("BRI", "GRO"): 10, ("BCN", "NAP"): 10, ("GRO", "BRI"): 10}
-    req = SearchRequest(
-        origins=["NAP", "BRI"],
-        destinations=["BCN", "GRO"],
-        depart_date=DEPART,
-        return_date=RETURN,
-    )
+    req = round_trip(["NAP", "BRI"], ["BCN", "GRO"], ["NAP", "BRI"])
     result = run(req, make_fake(calls, prices=prices))
 
-    flags = {c["same_airports"] for c in result["combos"]}
-    assert False in flags  # es. andata NAP→BCN, ritorno GRO→BRI
-    assert True in flags   # es. andata NAP→BCN, ritorno BCN→NAP
+    flags = {tuple(c["same_airport_connections"]) for c in result["combos"]}
+    assert (False,) in flags  # es. andata NAP→BCN, ritorno GRO→BRI
+    assert (True,) in flags   # es. andata NAP→BCN, ritorno BCN→NAP
+
+
+def test_three_leg_trip_returns_home_with_multicity_link():
+    # A->B->C->A: NAP→BCN, BCN→GRO, GRO→NAP. Il fake trova voli per ogni coppia.
+    calls: list = []
+    req = SearchRequest(legs=[
+        TripLeg(origins=["NAP"], destinations=["BCN"], date=DEPART),
+        TripLeg(destinations=["GRO"], date=MID),
+        TripLeg(destinations=["NAP"], date=RETURN),
+    ])
+    result = run(req, make_fake(calls))
+
+    assert len(calls) == 3
+    assert result["stats"]["queries"] == 3
+    assert result["errors"] == []
+    assert result["combos"], "attesa almeno una combinazione"
+    for c in result["combos"]:
+        assert len(c["keys"]) == 3
+        assert c["returns_home"] is True
+        assert c["nights"] == [2, 3]
+        assert c["same_airport_connections"] == [True, True]
+        assert c["links"][0]["label"].startswith("Multi-città")
+
+
+def test_leg_without_flights_means_no_combos():
+    calls: list = []
+    base = make_fake(calls)
+
+    def no_flights_from_bcn(origin, destination, date, adults, hints):
+        if origin == "BCN":
+            calls.append((origin, destination, date))
+            return []
+        return base(origin, destination, date, adults, hints)
+
+    result = run(round_trip(["NAP"], ["BCN"], ["NAP"]), no_flights_from_bcn)
+
+    assert result["legs"][0]["found"] == 1
+    assert result["legs"][1]["found"] == 0
+    assert result["combos"] == []
+
+
+def test_leg_dates_out_of_order_raise_value_error():
+    calls: list = []
+    req = SearchRequest(legs=[
+        TripLeg(origins=["NAP"], destinations=["BCN"], date=RETURN),
+        TripLeg(destinations=["NAP"], date=DEPART),
+    ])
+    with pytest.raises(ValueError):
+        run(req, make_fake(calls))
+    assert calls == []
+
+
+def test_more_than_five_legs_raises_value_error():
+    calls: list = []
+    req = SearchRequest(legs=[TripLeg(origins=["NAP"], destinations=["BCN"], date=DEPART) for _ in range(6)])
+    with pytest.raises(ValueError):
+        run(req, make_fake(calls))
+    assert calls == []
+
+
+def test_empty_legs_raise_value_error():
+    with pytest.raises(ValueError):
+        run(SearchRequest(legs=[]), make_fake([]))
 
 
 def test_flex_days_triples_the_dates():
     calls: list = []
-    req = SearchRequest(origins=["NAP"], destinations=["BCN"], depart_date=DEPART, flex_days=1)
+    req = SearchRequest(legs=[TripLeg(origins=["NAP"], destinations=["BCN"], date=DEPART)], flex_days=1)
     result = run(req, make_fake(calls))
 
     assert {c[2] for c in calls} == {"2026-12-14", "2026-12-15", "2026-12-16"}
@@ -177,48 +250,43 @@ def test_flex_days_triples_the_dates():
 
 def test_too_many_queries_raises():
     calls: list = []
-    req = SearchRequest(
-        origins=["NAP", "BRI", "MXP", "FCO", "VCE", "BLQ"],
-        destinations=["BCN", "GRO", "MAD", "LIS", "CDG", "ORY"],
-        depart_date=DEPART,
-        return_date=RETURN,
+    req = round_trip(
+        ["NAP", "BRI", "MXP", "FCO", "VCE", "BLQ"],
+        ["BCN", "GRO", "MAD", "LIS", "CDG", "ORY"],
+        ["NAP", "BRI", "MXP", "FCO", "VCE", "BLQ"],
     )
     with pytest.raises(TooManyQueries):
         run(req, make_fake(calls))
     assert calls == []  # rifiutata prima di interrogare Google
 
 
-def test_failed_leg_is_reported_and_others_still_return():
+def test_failed_query_is_reported_and_others_still_return():
     calls: list = []
     fake = make_fake(calls, fail={("NAP", "BCN")})
-    req = SearchRequest(origins=["NAP", "BRI"], destinations=["BCN"], depart_date=DEPART)
+    req = SearchRequest(legs=[TripLeg(origins=["NAP", "BRI"], destinations=["BCN"], date=DEPART)])
     result = run(req, fake)
 
     assert len(result["errors"]) == 1
     err = result["errors"][0]
     assert (err["origin"], err["destination"], err["date"]) == ("NAP", "BCN", DEPART)
     assert "503" in err["error"]
-    assert [(o["origin"], o["destination"]) for o in result["outbound"]] == [("BRI", "BCN")]
+    assert [(i["origin"], i["destination"]) for i in result["legs"][0]["itineraries"]] == [("BRI", "BCN")]
 
 
 def test_unexpected_exception_is_reported_as_error():
     def broken(origin, destination, date, adults, hints):
         raise KeyError("layout")
 
-    req = SearchRequest(origins=["NAP"], destinations=["BCN"], depart_date=DEPART)
+    req = SearchRequest(legs=[TripLeg(origins=["NAP"], destinations=["BCN"], date=DEPART)])
     result = run(req, broken)
     assert len(result["errors"]) == 1
     assert "KeyError" in result["errors"][0]["error"]
-    assert result["outbound"] == []
+    assert result["legs"][0]["itineraries"] == []
 
 
 def test_invalid_codes_are_cleaned():
     calls: list = []
-    req = SearchRequest(
-        origins=[" nap ", "XX1", "BRI", "nap"],
-        destinations=["bcn"],
-        depart_date=DEPART,
-    )
+    req = SearchRequest(legs=[TripLeg(origins=[" nap ", "XX1", "BRI", "nap"], destinations=["bcn"], date=DEPART)])
     run(req, make_fake(calls))
     assert {c[0] for c in calls} == {"NAP", "BRI"}
     assert {c[1] for c in calls} == {"BCN"}
@@ -227,21 +295,30 @@ def test_invalid_codes_are_cleaned():
 
 def test_origin_equal_destination_pairs_are_skipped():
     calls: list = []
-    req = SearchRequest(origins=["NAP"], destinations=["NAP", "BCN"], depart_date=DEPART)
+    req = SearchRequest(legs=[TripLeg(origins=["NAP"], destinations=["NAP", "BCN"], date=DEPART)])
     run(req, make_fake(calls))
     assert calls == [("NAP", "BCN", DEPART)]
 
 
-def test_outbound_filters_are_applied_to_results():
+def test_leg_filters_are_applied_to_results():
     calls: list = []
-    req = SearchRequest(
-        origins=["NAP"],
-        destinations=["BCN"],
-        depart_date=DEPART,
-        outbound_filters=FlightFilters(max_price=50),
-    )
+    req = SearchRequest(legs=[
+        TripLeg(origins=["NAP"], destinations=["BCN"], date=DEPART, filters=FlightFilters(max_price=50)),
+    ])
     fake = make_fake(calls, default_price=80)
     result = run(req, fake)
-    assert result["outbound"] == []
-    assert result["stats"]["outbound_found"] == 1
-    assert result["stats"]["outbound_after_filters"] == 0
+    leg = result["legs"][0]
+    assert leg["itineraries"] == []
+    assert leg["found"] == 1
+    assert leg["after_filters"] == 0
+
+
+def test_failed_leg_does_not_block_other_legs_in_combos():
+    calls: list = []
+    fake = make_fake(calls, fail={("BCN", "NAP")})
+    result = run(round_trip(["NAP"], ["BCN"], ["NAP"]), fake)
+
+    assert len(result["errors"]) == 1
+    assert len(result["legs"][0]["itineraries"]) == 1
+    assert result["legs"][1]["itineraries"] == []
+    assert result["combos"] == []

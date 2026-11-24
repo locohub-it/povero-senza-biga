@@ -71,3 +71,49 @@ def roundtrip_links(o: Itinerary, i: Itinerary, adults: int) -> list[dict]:
         "url": google_roundtrip_url(o, i, adults, carrier),
     })
     return links
+
+
+def same_carrier_chain(chain: list[Itinerary]) -> set[str] | None:
+    """Codici compagnia se tutti i voli della catena sono della stessa compagnia (o gruppo Ryanair)."""
+    codes = [carrier_codes(it) for it in chain]
+    if not all(codes):
+        return None
+    union = set().union(*codes)
+    if len(union) == 1 or union <= RYANAIR_CODES:
+        return union
+    return None
+
+
+def google_multicity_url(chain: list[Itinerary], adults: int, airlines: set[str] | None) -> str:
+    q = create_query(
+        flights=[
+            FlightQuery(date=it.departure[:10], from_airport=it.origin, to_airport=it.destination,
+                        airlines=sorted(airlines) if airlines else None)
+            for it in chain
+        ],
+        trip="multi-city",
+        passengers=Passengers(adults=adults),
+        language=settings.language,
+        currency=settings.currency,
+    )
+    return q.url()
+
+
+def chain_links(chain: list[Itinerary], adults: int) -> list[dict]:
+    """Link per prenotare più tappe insieme.
+
+    - 2 tappe che tornano agli stessi aeroporti: andata e ritorno (anche Ryanair diretto).
+    - più tappe con aeroporti che combaciano: multi-città su Google Flights.
+    - aeroporti che non combaciano: nessun link (sono biglietti separati).
+    """
+    if len(chain) == 2:
+        links = roundtrip_links(chain[0], chain[1], adults)
+        if links:
+            return links
+    if len(chain) >= 2 and all(a.destination == b.origin for a, b in zip(chain, chain[1:])):
+        carrier = same_carrier_chain(chain)
+        return [{
+            "label": "Multi-città stessa compagnia su Google Flights" if carrier else "Multi-città su Google Flights",
+            "url": google_multicity_url(chain, adults, carrier),
+        }]
+    return []

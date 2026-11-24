@@ -1,4 +1,12 @@
-"""Ricerca multi-aeroporto: N partenze × M arrivi, andata e ritorno indipendenti."""
+"""Ricerca a tappe multi-aeroporto.
+
+Un viaggio è una sequenza di tappe (voli di sola andata). Ogni tappa va da un
+insieme di aeroporti a un altro: la prima da «Da» ad «A», le successive dagli
+aeroporti della tappa precedente a quelli nuovi. Andata e ritorno classico =
+due tappe, con la seconda che torna agli aeroporti di partenza.
+Ogni coppia di aeroporti viene cercata come sola andata, poi il sito combina le
+tappe nella sequenza compatibile più economica.
+"""
 
 from __future__ import annotations
 
@@ -12,11 +20,13 @@ from .cache import TTLCache
 from .config import settings
 from .filters import FlightFilters
 from .flights import FlightSearchError, GoogleHints, Itinerary, search_one_way, shift_date
-from .roundtrip import roundtrip_links, same_carrier
+from .roundtrip import chain_links, same_carrier_chain
 
 _cache = TTLCache(settings.cache_ttl_seconds)
 
 SearchFn = Callable[[str, str, str, int, GoogleHints], list[Itinerary]]
+
+MAX_TRIP_LEGS = 5
 
 
 class TooManyQueries(ValueError):
@@ -24,25 +34,29 @@ class TooManyQueries(ValueError):
 
 
 @dataclass
-class SearchRequest:
-    origins: list[str]
+class TripLeg:
+    """Una tappa del viaggio. `origins` vuoto = aeroporti di arrivo della tappa precedente."""
+
     destinations: list[str]
-    depart_date: str
-    return_date: str | None = None
-    # Aeroporti del ritorno: se vuoti, si usano destinazioni → origini.
-    return_origins: list[str] = field(default_factory=list)
-    return_destinations: list[str] = field(default_factory=list)
-    flex_days: int = 0  # ± giorni su entrambe le date
+    date: str
+    origins: list[str] = field(default_factory=list)
+    filters: FlightFilters = field(default_factory=FlightFilters)
+
+
+@dataclass
+class SearchRequest:
+    legs: list[TripLeg]
+    flex_days: int = 0  # ± giorni su tutte le date
     adults: int = 1
-    outbound_filters: FlightFilters = field(default_factory=FlightFilters)
-    inbound_filters: FlightFilters = field(default_factory=FlightFilters)
-    min_hours_at_destination: int = 3  # tempo minimo tra arrivo andata e partenza ritorno
+    min_hours_at_destination: int = 3  # tempo minimo tra l'arrivo di una tappa e la partenza della successiva
     max_results: int = 60
     max_combos: int = 30
 
 
 @dataclass(frozen=True)
-class Leg:
+class Query:
+    """Una singola ricerca di sola andata su Google Flights."""
+
     origin: str
     destination: str
     date: str
@@ -52,9 +66,9 @@ def _dates(date: str, flex: int) -> list[str]:
     return [shift_date(date, d) for d in range(-flex, flex + 1)]
 
 
-def plan_legs(origins: list[str], destinations: list[str], date: str, flex: int) -> list[Leg]:
+def plan_queries(origins: list[str], destinations: list[str], date: str, flex: int) -> list[Query]:
     return [
-        Leg(o, d, day)
+        Query(o, d, day)
         for day in _dates(date, flex)
         for o in origins
         for d in destinations
@@ -71,30 +85,30 @@ def _clean(codes: list[str]) -> list[str]:
     return out
 
 
-async def _run_legs(legs: list[Leg], adults: int, hints: GoogleHints, search_fn: SearchFn,
-                    sem: asyncio.Semaphore) -> tuple[list[Itinerary], list[dict]]:
-    async def one(leg: Leg):
-        key = (leg, adults, hints)
+async def _run_queries(queries: list[Query], adults: int, hints: GoogleHints, search_fn: SearchFn,
+                       sem: asyncio.Semaphore) -> tuple[list[Itinerary], list[dict]]:
+    async def one(q: Query):
+        key = (q, adults, hints)
         cached = _cache.get(key)
         if cached is not None:
-            return leg, cached, None
+            return q, cached, None
         async with sem:
             await asyncio.sleep(random.uniform(0.1, 0.6))  # non martellare Google
             try:
-                res = await asyncio.to_thread(search_fn, leg.origin, leg.destination, leg.date, adults, hints)
+                res = await asyncio.to_thread(search_fn, q.origin, q.destination, q.date, adults, hints)
             except FlightSearchError as exc:
-                return leg, None, str(exc)
+                return q, None, str(exc)
             except Exception as exc:  # parsing cambiato, ecc.
-                return leg, None, f"errore imprevisto: {exc.__class__.__name__}: {exc}"
+                return q, None, f"errore imprevisto: {exc.__class__.__name__}: {exc}"
         _cache.set(key, res)
-        return leg, res, None
+        return q, res, None
 
-    results = await asyncio.gather(*(one(l) for l in legs))
+    results = await asyncio.gather(*(one(q) for q in queries))
     itineraries: list[Itinerary] = []
     errors: list[dict] = []
-    for leg, res, err in results:
+    for q, res, err in results:
         if err:
-            errors.append({"origin": leg.origin, "destination": leg.destination, "date": leg.date, "error": err})
+            errors.append({"origin": q.origin, "destination": q.destination, "date": q.date, "error": err})
         else:
             itineraries.extend(res)
     return itineraries, errors
@@ -112,35 +126,48 @@ def _dedupe(items: list[Itinerary]) -> list[Itinerary]:
     return list(seen.values())
 
 
-def build_combos(outbound: list[Itinerary], inbound: list[Itinerary], min_gap_hours: int,
-                 limit: int, pool: int = 40, adults: int = 1) -> list[dict]:
-    """Abbina andate e ritorni compatibili e restituisce le combinazioni più economiche."""
-    outs = [o for o in outbound if o.price is not None][:pool]
-    ins = [i for i in inbound if i.price is not None][:pool]
+def build_chains(legs: list[list[Itinerary]], min_gap_hours: int, limit: int, pool: int = 30,
+                 beam: int = 400, adults: int = 1) -> list[dict]:
+    """Combina un volo per ogni tappa nella sequenza più economica.
+
+    Vincolo: ogni volo parte almeno `min_gap_hours` dopo l'arrivo del precedente.
+    Gli aeroporti tra una tappa e l'altra possono essere diversi (es. arrivo a
+    Malpensa e ripartenza da Linate): viene segnalato nel risultato.
+    """
+    if len(legs) < 2 or any(not l for l in legs):
+        return []
     gap = timedelta(hours=min_gap_hours)
-    combos = []
-    for o in outs:
-        arr = datetime.fromisoformat(o.arrival)
-        for i in ins:
-            if datetime.fromisoformat(i.departure) < arr + gap:
-                continue
-            nights = (datetime.fromisoformat(i.departure).date() - arr.date()).days
-            combos.append({
-                "total": o.price + i.price,
-                "outbound": o.key,
-                "inbound": i.key,
-                "nights": nights,
-                "same_airports": o.origin == i.destination and o.destination == i.origin,
-            })
-    combos.sort(key=lambda c: c["total"])
-    top = combos[:limit]
-    by_out = {o.key: o for o in outs}
-    by_in = {i.key: i for i in ins}
-    for c in top:
-        o, i = by_out[c["outbound"]], by_in[c["inbound"]]
-        c["same_airline"] = same_carrier(o, i) is not None
-        c["roundtrip_links"] = roundtrip_links(o, i, adults)
-    return top
+    pools = [[i for i in leg if i.price is not None][:pool] for leg in legs]
+    chains: list[tuple[int, list[Itinerary]]] = [(it.price, [it]) for it in pools[0]]
+    for nxt in pools[1:]:
+        grown = []
+        for total, chain in chains:
+            ready = datetime.fromisoformat(chain[-1].arrival) + gap
+            for it in nxt:
+                if datetime.fromisoformat(it.departure) >= ready:
+                    grown.append((total + it.price, chain + [it]))
+        grown.sort(key=lambda c: c[0])
+        chains = grown[:beam]
+        if not chains:
+            return []
+
+    out = []
+    for total, chain in chains[:limit]:
+        nights = [
+            (datetime.fromisoformat(b.departure).date() - datetime.fromisoformat(a.arrival).date()).days
+            for a, b in zip(chain, chain[1:])
+        ]
+        connections = [a.destination == b.origin for a, b in zip(chain, chain[1:])]
+        out.append({
+            "total": total,
+            "keys": [it.key for it in chain],
+            "nights": nights,
+            "same_airport_connections": connections,
+            "returns_home": chain[-1].destination == chain[0].origin,
+            "same_airline": same_carrier_chain(chain) is not None,
+            "links": chain_links(chain, adults),
+        })
+    return out
 
 
 def price_calendar(items: list[Itinerary], dates: list[str]) -> list[dict]:
@@ -168,67 +195,73 @@ def price_calendar(items: list[Itinerary], dates: list[str]) -> list[dict]:
 
 
 async def run_search(req: SearchRequest, search_fn: SearchFn = search_one_way) -> dict:
-    origins = _clean(req.origins)
-    destinations = _clean(req.destinations)
-    if not origins or not destinations:
-        raise ValueError("servono almeno un aeroporto di partenza e uno di arrivo")
+    if not req.legs:
+        raise ValueError("serve almeno una tappa")
+    if len(req.legs) > MAX_TRIP_LEGS:
+        raise ValueError(f"massimo {MAX_TRIP_LEGS} tappe")
     flex = max(0, min(req.flex_days, 3))
 
-    out_legs = plan_legs(origins, destinations, req.depart_date, flex)
-    in_legs: list[Leg] = []
-    if req.return_date:
-        r_orig = _clean(req.return_origins) or destinations
-        r_dest = _clean(req.return_destinations) or origins
-        in_legs = plan_legs(r_orig, r_dest, req.return_date, flex)
+    # Risolvi aeroporti di ogni tappa: la partenza di default è l'arrivo della tappa precedente.
+    resolved: list[tuple[list[str], list[str], TripLeg]] = []
+    prev_dest: list[str] = []
+    for i, leg in enumerate(req.legs):
+        origins = _clean(leg.origins) or prev_dest
+        dests = _clean(leg.destinations)
+        if not origins:
+            raise ValueError("servono almeno un aeroporto di partenza e uno di arrivo")
+        if not dests:
+            raise ValueError(f"la tappa {i + 1} non ha aeroporti di arrivo")
+        if i > 0 and leg.date < req.legs[i - 1].date:
+            raise ValueError(f"la data della tappa {i + 1} è prima di quella della tappa {i}")
+        resolved.append((origins, dests, leg))
+        prev_dest = dests
 
-    total = len(out_legs) + len(in_legs)
+    plans = [plan_queries(o, d, leg.date, flex) for o, d, leg in resolved]
+    total = sum(len(p) for p in plans)
     if total > settings.max_queries:
         raise TooManyQueries(
             f"la ricerca richiede {total} query (massimo {settings.max_queries}): "
-            "riduci aeroporti o giorni di flessibilità"
+            "riduci aeroporti, tappe o giorni di flessibilità"
         )
 
     sem = asyncio.Semaphore(settings.max_concurrency)
-    (out_raw, out_err), (in_raw, in_err) = await asyncio.gather(
-        _run_legs(out_legs, req.adults, req.outbound_filters.google_hints(), search_fn, sem),
-        _run_legs(in_legs, req.adults, req.inbound_filters.google_hints(), search_fn, sem),
-    )
+    raw = await asyncio.gather(*(
+        _run_queries(plan, req.adults, leg.filters.google_hints(), search_fn, sem)
+        for plan, (_, _, leg) in zip(plans, resolved)
+    ))
 
-    outbound = sorted((i for i in _dedupe(out_raw) if req.outbound_filters.accepts(i)), key=_sort_key)
-    inbound = sorted((i for i in _dedupe(in_raw) if req.inbound_filters.accepts(i)), key=_sort_key)
+    filtered: list[list[Itinerary]] = []
+    errors: list[dict] = []
+    for (items, errs), (_, _, leg) in zip(raw, resolved):
+        filtered.append(sorted((i for i in _dedupe(items) if leg.filters.accepts(i)), key=_sort_key))
+        errors.extend(errs)
 
-    combos = (build_combos(outbound, inbound, req.min_hours_at_destination, req.max_combos, adults=req.adults)
-              if in_legs else [])
-    calendar = {
-        "outbound": price_calendar(outbound, _dates(req.depart_date, flex)),
-        "inbound": price_calendar(inbound, _dates(req.return_date, flex)) if req.return_date else [],
-    }
+    combos = build_chains(filtered, req.min_hours_at_destination, req.max_combos, adults=req.adults)
 
-    # Le combinazioni possono riferirsi a voli oltre il limite di visualizzazione: includili.
-    out_show = outbound[: req.max_results]
-    in_show = inbound[: req.max_results]
-    shown_out = {i.key for i in out_show}
-    shown_in = {i.key for i in in_show}
-    by_key_out = {i.key: i for i in outbound}
-    by_key_in = {i.key: i for i in inbound}
-    for c in combos:
-        if c["outbound"] not in shown_out:
-            out_show.append(by_key_out[c["outbound"]]); shown_out.add(c["outbound"])
-        if c["inbound"] not in shown_in:
-            in_show.append(by_key_in[c["inbound"]]); shown_in.add(c["inbound"])
+    legs_out = []
+    for idx, ((origins, dests, leg), items, (found, _)) in enumerate(zip(resolved, filtered, raw)):
+        shown = items[: req.max_results]
+        shown_keys = {i.key for i in shown}
+        by_key = {i.key: i for i in items}
+        # le combinazioni possono usare voli oltre il limite di visualizzazione: includili
+        for c in combos:
+            k = c["keys"][idx]
+            if k not in shown_keys:
+                shown.append(by_key[k]); shown_keys.add(k)
+        legs_out.append({
+            "index": idx,
+            "origins": origins,
+            "destinations": dests,
+            "date": leg.date,
+            "itineraries": [i.to_dict() for i in shown],
+            "calendar": price_calendar(items, _dates(leg.date, flex)),
+            "found": len(found),
+            "after_filters": len(items),
+        })
 
     return {
-        "outbound": [i.to_dict() for i in out_show],
-        "inbound": [i.to_dict() for i in in_show],
+        "legs": legs_out,
         "combos": combos,
-        "calendar": calendar,
-        "errors": out_err + in_err,
-        "stats": {
-            "queries": total,
-            "outbound_found": len(out_raw),
-            "outbound_after_filters": len(outbound),
-            "inbound_found": len(in_raw),
-            "inbound_after_filters": len(inbound),
-            "currency": settings.currency,
-        },
+        "errors": errors,
+        "stats": {"queries": total, "currency": settings.currency},
     }

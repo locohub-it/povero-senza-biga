@@ -8,9 +8,14 @@ import app.main
 from app.main import app as fastapi_app
 
 VALID_SEARCH = {
-    "origins": ["NAP"],
-    "destinations": ["BCN"],
-    "depart_date": "2026-12-15",
+    "legs": [{"origins": ["NAP"], "destinations": ["BCN"], "date": "2026-12-15"}],
+}
+
+ROUND_TRIP = {
+    "legs": [
+        {"origins": ["NAP", "BRI"], "destinations": ["BCN", "GRO"], "date": "2026-12-15"},
+        {"destinations": ["NAP", "BRI"], "date": "2026-12-20"},
+    ],
 }
 
 
@@ -110,7 +115,7 @@ def test_search_returns_result_from_run_search(client, monkeypatch):
     async def fake_run_search(req):
         seen["req"] = req
         return {
-            "outbound": [], "inbound": [], "combos": [], "errors": [],
+            "legs": [], "combos": [], "errors": [],
             "stats": {"queries": 1},
         }
 
@@ -118,18 +123,37 @@ def test_search_returns_result_from_run_search(client, monkeypatch):
     r = client.post("/api/search", json=VALID_SEARCH)
     assert r.status_code == 200
     body = r.json()
-    assert body["outbound"] == [] and body["combos"] == []
+    assert body["legs"] == [] and body["combos"] == []
     assert body["stats"] == {"queries": 1}
     assert body["airports"] == {}
-    assert seen["req"].origins == ["NAP"]
-    assert seen["req"].depart_date == "2026-12-15"
+    leg = seen["req"].legs[0]
+    assert leg.origins == ["NAP"]
+    assert leg.destinations == ["BCN"]
+    assert leg.date == "2026-12-15"
+
+
+def test_search_round_trip_passes_all_legs_to_run_search(client, monkeypatch):
+    seen = {}
+
+    async def fake_run_search(req):
+        seen["req"] = req
+        return {"legs": [], "combos": [], "errors": [], "stats": {}}
+
+    monkeypatch.setattr(app.main, "run_search", fake_run_search)
+    assert client.post("/api/search", json=ROUND_TRIP).status_code == 200
+    legs = seen["req"].legs
+    assert len(legs) == 2
+    assert legs[1].origins == []  # vuoto: parte dagli arrivi della tappa precedente
+    assert legs[1].destinations == ["NAP", "BRI"]
+    assert legs[1].date == "2026-12-20"
 
 
 def test_search_enriches_airports_from_results(client, monkeypatch):
     async def fake_run_search(req):
         segment = {"origin": "NAP", "destination": "BCN"}
         item = {"origin": "NAP", "destination": "BCN", "segments": [segment]}
-        return {"outbound": [item], "inbound": [], "combos": [], "errors": [], "stats": {}}
+        leg = {"index": 0, "origins": ["NAP"], "destinations": ["BCN"], "itineraries": [item]}
+        return {"legs": [leg], "combos": [], "errors": [], "stats": {}}
 
     monkeypatch.setattr(app.main, "run_search", fake_run_search)
     body = client.post("/api/search", json=VALID_SEARCH).json()
@@ -137,13 +161,37 @@ def test_search_enriches_airports_from_results(client, monkeypatch):
 
 
 def test_search_invalid_time_is_400(client):
-    payload = {**VALID_SEARCH, "outbound_filters": {"arrive_to": "25:99"}}
+    payload = {"legs": [{**VALID_SEARCH["legs"][0], "filters": {"arrive_to": "25:99"}}]}
     r = client.post("/api/search", json=payload)
     assert r.status_code == 400
 
 
-def test_search_requires_origins(client):
-    r = client.post("/api/search", json={**VALID_SEARCH, "origins": []})
+def test_search_first_leg_without_origins_is_400(client):
+    payload = {"legs": [{"origins": [], "destinations": ["BCN"], "date": "2026-12-15"}]}
+    assert client.post("/api/search", json=payload).status_code == 400
+
+
+def test_search_leg_dates_out_of_order_is_400(client):
+    payload = {"legs": [
+        {"origins": ["NAP"], "destinations": ["BCN"], "date": "2026-12-20"},
+        {"destinations": ["NAP"], "date": "2026-12-15"},
+    ]}
+    assert client.post("/api/search", json=payload).status_code == 400
+
+
+def test_search_requires_legs(client):
+    r = client.post("/api/search", json={"legs": []})
+    assert r.status_code == 422
+
+
+def test_search_rejects_more_than_five_legs(client):
+    leg = {"origins": ["NAP"], "destinations": ["BCN"], "date": "2026-12-15"}
+    r = client.post("/api/search", json={"legs": [leg] * 6})
+    assert r.status_code == 422
+
+
+def test_search_leg_requires_destinations(client):
+    r = client.post("/api/search", json={"legs": [{"origins": ["NAP"], "destinations": [], "date": "2026-12-15"}]})
     assert r.status_code == 422
 
 

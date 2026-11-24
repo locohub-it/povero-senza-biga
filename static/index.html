@@ -45,25 +45,14 @@
 
 <main class="wrap main">
   <form id="search-form" class="search" autocomplete="off" novalidate>
-    <div class="search-main">
-      <div class="route-row">
-        <div class="field" id="fld-from"></div>
-        <button type="button" id="swap" class="icon-btn" title="Inverti Da / A" aria-label="Inverti Da e A">⇄</button>
-        <div class="field" id="fld-to"></div>
-      </div>
-      <div class="when">
-        <label class="lab">Andata
-          <input type="date" id="depart" required>
-        </label>
-        <label class="lab">Ritorno
-          <input type="date" id="ret">
-        </label>
-      </div>
+    <div class="stops" id="stops" aria-label="Aeroporti del viaggio"></div>
+
+    <div class="dates-row">
+      <div class="dates" id="dates"></div>
       <button type="submit" id="go" class="primary">Cerca voli</button>
     </div>
 
     <div class="search-opts">
-      <label class="chk"><input type="checkbox" id="oneway"> Solo andata</label>
       <label class="opt">Flessibilità
         <select id="flex">
           <option value="0">date esatte</option>
@@ -83,20 +72,8 @@
     <div class="search-more">
       <details class="sub-box" id="filters-box">
         <summary>Orari, scali e prezzo</summary>
-        <div class="tabs" role="tablist">
-          <button type="button" class="tab active" data-tab="o" role="tab">Andata</button>
-          <button type="button" class="tab" data-tab="i" role="tab">Ritorno</button>
-        </div>
+        <div class="tabs" id="ftabs" role="tablist"></div>
         <div class="fpanels" id="fpanels"></div>
-      </details>
-      <details class="sub-box" id="ret-airports">
-        <summary>Ritorno da/verso aeroporti diversi</summary>
-        <p class="hint">Lascia vuoto per tornare da «A» verso «Da».</p>
-        <div class="route-row">
-          <div class="field" id="fld-rfrom"></div>
-          <span class="arrow-sep">→</span>
-          <div class="field" id="fld-rto"></div>
-        </div>
       </details>
     </div>
 
