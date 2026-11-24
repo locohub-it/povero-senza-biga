@@ -75,7 +75,37 @@ docker compose up -d --build
 
 Il sito risponde su `http://localhost:8000` (cambia la porta con `HOST_PORT` in `.env`).
 
-## Proxmox (VM pronta con un comando)
+## Proxmox: container LXC (consigliato)
+
+`scripts/proxmox-create-lxc.sh` crea un container **LXC Debian 12** e ci installa l'app con Python e systemd (niente Docker). **Non richiede KVM**: funziona anche se la virtualizzazione è disattivata nel BIOS o se Proxmox gira dentro un'altra VM (errore *"KVM virtualisation configured, but not available"*). È anche più leggero di una VM.
+
+Sull'host Proxmox, come root:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/locohub-it/povero-senza-biga/main/scripts/proxmox-create-lxc.sh
+less proxmox-create-lxc.sh     # leggilo prima di eseguirlo
+SSH_PUBKEY='ssh-ed25519 AAAA... tu@computer' bash proxmox-create-lxc.sh
+```
+
+Alla fine stampa l'indirizzo del sito, la password di root del container (generata, se non passi `ROOT_PASSWORD`) e verifica che il sito risponda. Senza `APP_PASSWORD` il sito è aperto senza login.
+
+| Variabile | Default | Descrizione |
+|---|---|---|
+| `CTID` | primo libero | ID del container |
+| `CT_NAME` | `povero-senza-biga` | hostname |
+| `STORAGE` | `local-lvm` | storage del disco |
+| `TEMPLATE_STORAGE` | `local` | dove scaricare il template Debian |
+| `BRIDGE` / `VLAN_TAG` | `vmbr0` / vuoto | rete |
+| `IP_CIDR` / `GATEWAY` / `DNS` | `dhcp` / vuoto / vuoto | IP statico, es. `192.168.1.50/24` |
+| `MEMORY` / `SWAP` / `CORES` / `DISK_SIZE` | `1024` / `512` / `1` / `6` (GB) | risorse |
+| `SSH_PUBKEY` / `SSH_KEY_FILE` | vuoto | chiavi pubbliche autorizzate per root |
+| `ROOT_PASSWORD` | generata | password di root del container |
+| `APP_PASSWORD` | vuota | password del sito; vuota = nessun login |
+| `APP_PORT` | `8000` | porta del sito |
+
+Comandi utili dall'host: `pct enter <CTID>` (shell), `pct exec <CTID> -- psb-update` (aggiorna all'ultima versione), `pct exec <CTID> -- journalctl -u povero-senza-biga -f` (log).
+
+## Proxmox: VM con Docker (richiede KVM)
 
 `scripts/proxmox-create-vm.sh` crea su Proxmox VE una VM **Debian 12** dall'immagine cloud ufficiale, la configura con **cloud-init**, installa **Docker**, clona questo repository e avvia l'app con Docker Compose. Mette il file `.env` in `/opt/psb/.env` (con `SECRET_KEY` casuale), abilita l'avvio automatico della VM e installa il comando `psb-update`.
 

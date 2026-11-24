@@ -52,6 +52,12 @@ die()  { printf '\033[1;31mERRORE:\033[0m %s\n' "$*" >&2; exit 1; }
 [[ $EUID -eq 0 ]] || die "va eseguito come root sull'host Proxmox"
 command -v qm >/dev/null || die "comando 'qm' non trovato: sei sull'host Proxmox?"
 command -v pvesm >/dev/null || die "comando 'pvesm' non trovato"
+command -v openssl >/dev/null || die "comando 'openssl' non trovato"
+if [[ ! -e /dev/kvm ]]; then
+  die "KVM non disponibile su questo host (virtualizzazione disattivata nel BIOS, o Proxmox gira dentro un'altra VM).
+       Attiva VT-x/AMD-V nel BIOS, oppure usa il container LXC che non richiede KVM:
+       curl -fsSLO https://raw.githubusercontent.com/locohub-it/povero-senza-biga/main/scripts/proxmox-create-lxc.sh && bash proxmox-create-lxc.sh"
+fi
 
 # ---------------- VMID ----------------
 if [[ -z "$VMID" ]]; then
