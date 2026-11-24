@@ -419,3 +419,20 @@ body.login { display: flex; min-height: 100vh; align-items: center; justify-cont
   .stop-sep.arrow { flex-basis: 100%; text-align: center; font-size: 0; margin: -6px 0; }
   .stop-sep.arrow::after { content: "↓"; font-size: 1.1rem; }
 }
+
+/* ---------- + tappa, ritorno, conferma ---------- */
+.stop-sep.plus { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-size: 1.35rem; font-weight: 700; line-height: 1; }
+.stop-sep.plus:hover:not(:disabled) { filter: brightness(1.08); }
+.stop-sep.plus:disabled { opacity: .4; cursor: not-allowed; }
+.stop.ret .chipbox { border-style: dashed; }
+.date-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
+.date-x { border: 0; background: transparent; color: var(--muted); font-size: 1rem; line-height: 1; padding: 0 4px; border-radius: 6px; }
+.date-x:hover { color: var(--bad); background: var(--bad-bg); }
+.no-ret { display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; }
+.add-ret { border: 1px dashed var(--ctp-surface2); background: transparent; color: var(--accent); border-radius: 10px; min-height: 46px; padding: 0 12px; font-weight: 600; }
+.add-ret:hover { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
+dialog.confirm { border: 1px solid var(--line); border-radius: 16px; padding: 22px; max-width: min(380px, calc(100vw - 32px)); background: var(--card); color: var(--fg); box-shadow: var(--shadow-lg); }
+dialog.confirm::backdrop { background: rgba(17,17,27,.45); }
+dialog.confirm p { margin: 0 0 18px; font-size: 1.02rem; font-weight: 600; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.confirm-actions .btn { padding: 8px 16px; }

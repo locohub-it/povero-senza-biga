@@ -206,76 +206,127 @@ function filterPanel(dir, title) {
     h('div', { class: 'inline' }, 'Scalo lungo da', h('input', { type: 'number', 'data-f': p('threshold'), min: 1, step: 'any', value: 6, inputmode: 'decimal' }), 'ore'));
 }
 
-/* ---------- stato del form: catena di aeroporti (tappe) ---------- */
+/* ---------- stato del form: catena di aeroporti ----------
+   stops = caselle esplicite [Da, A, tappe...]
+   ritorno: con 2 caselle è sottinteso (A → Da); con più caselle compare la
+   casella «Ritorno a» precompilata con gli aeroporti di partenza.
+   retOn = false → nessun volo di ritorno (solo andata / multi-città aperto). */
 const el = {};
-const MAX_STOPS = 6; // 6 gruppi di aeroporti = 5 voli
-const stops = [];    // [{ id, field, wrap }]
-let dateInputs = []; // una data per volo
+const MAX_LEGS = 5;
+const stops = [];      // [{ id, field, wrap }]
+let retBox = null;     // { id, field, wrap } quando la casella Ritorno è visibile
+let retOn = true;
+let dateInputs = [];   // una data per volo
 let stopSeq = 0;
+let pendingDates = null; // date riallineate dopo aver aggiunto/tolto caselle
+const curDates = () => dateInputs.map(i => i.value);
 
-const legCount = () => Math.max(0, stops.length - 1);
-const stopLabel = i => i === 0 ? 'Da' : i === 1 ? 'A' : `Poi verso`;
-function legName(i, codesFrom, codesTo) {
-  const n = legCount();
-  const route = (codesFrom && codesFrom.length ? codesFrom.join('/') : '…') + ' → ' + (codesTo && codesTo.length ? codesTo.join('/') : '…');
-  if (n === 2 && i === 1 && isRoundTrip()) return `Ritorno · ${route}`;
-  if (n === 2 && i === 0 && isRoundTrip()) return `Andata · ${route}`;
+function legsCodes() {
+  // [[origini, destinazioni], ...] per ogni volo
+  const legs = [];
+  for (let i = 0; i < stops.length - 1; i++) legs.push([stops[i].field.codes, stops[i + 1].field.codes]);
+  if (retOn && stops.length >= 2) {
+    const home = stops.length === 2 ? stops[0].field.codes : (retBox ? retBox.field.codes : []);
+    legs.push([stops[stops.length - 1].field.codes, home]);
+  }
+  return legs;
+}
+const legCount = () => legsCodes().length;
+function isRoundTrip() { return retOn && stops.length === 2; }
+function legName(i) {
+  const legs = legsCodes();
+  const [from, to] = legs[i] || [[], []];
+  const route = (from.length ? from.join('/') : '…') + ' → ' + (to.length ? to.join('/') : '…');
+  if (isRoundTrip()) return (i === 0 ? 'Andata' : 'Ritorno') + ' · ' + route;
+  if (retOn && i === legs.length - 1) return 'Ritorno · ' + route;
+  if (legs.length === 1) return 'Andata · ' + route;
   return `Volo ${i + 1} · ${route}`;
 }
-function isRoundTrip() {
-  if (stops.length !== 3) return false;
-  const a = stops[0].field.codes, c = stops[2].field.codes;
-  return a.length > 0 && c.length > 0 && c.every(x => a.includes(x));
-}
 
-function addStop(codes, opts) {
-  if (stops.length >= MAX_STOPS) return null;
+function makeStop(codes, label, placeholder) {
   const id = 'stop-' + (++stopSeq);
   const fieldRoot = h('div', { class: 'field', id });
-  const removeBtn = h('button', { type: 'button', class: 'stop-x', title: 'Rimuovi questa tappa', 'aria-label': 'Rimuovi questa tappa' }, '×');
+  const removeBtn = h('button', { type: 'button', class: 'stop-x', title: 'Rimuovi questa casella', 'aria-label': 'Rimuovi questa casella' }, '×');
   const wrap = h('div', { class: 'stop' }, fieldRoot, removeBtn);
   $('#stops').append(wrap);
-  const field = makeChipField(id, id, '', 'Città o codice…');
-  const st = { id, field, wrap };
-  removeBtn.addEventListener('click', () => removeStop(st));
-  stops.push(st);
+  const field = makeChipField(id, id, label, placeholder);
+  field.setLabel(label);
   if (codes && codes.length) field.set(codes);
-  if (!(opts && opts.silent)) layoutStops();
+  return { id, field, wrap, removeBtn };
+}
+function addStop(codes) {
+  const st = makeStop(codes, 'Poi verso', 'Città o codice…');
+  st.removeBtn.addEventListener('click', () => removeStop(st));
+  stops.push(st);
   return st;
+}
+function ensureRetBox(codes) {
+  if (retBox) return retBox;
+  retBox = makeStop(codes, 'Ritorno a', 'Città o codice…');
+  retBox.wrap.classList.add('ret');
+  retBox.removeBtn.addEventListener('click', askNoReturn);
+  return retBox;
+}
+function dropRetBox() {
+  if (!retBox) return;
+  retBox.wrap.remove();
+  delete chipFields[retBox.id];
+  retBox = null;
 }
 function removeStop(st) {
   const i = stops.indexOf(st);
   if (i < 2) return; // Da e A restano sempre
+  // togliere la casella i unisce il volo che ci arriva (i-1) e quello che ne parte (i):
+  // se il secondo è il ritorno si tiene la sua data, altrimenti quella del primo
+  const d = curDates(); d.splice(retOn && i === stops.length - 1 ? i - 1 : i, 1); pendingDates = d;
   stops.splice(i, 1);
   st.wrap.remove();
   delete chipFields[st.id];
+  if (stops.length === 2) dropRetBox(); // torna andata e ritorno sottinteso
   layoutStops();
 }
+function plusClicked() {
+  if (legCount() >= MAX_LEGS) return;
+  const d = curDates();
+  const st = addStop([]);
+  if (retOn && stops.length === 3) ensureRetBox(stops[0].field.codes.slice());
+  d.splice(stops.length - 2, 0, ''); pendingDates = d; // nuovo volo prima del ritorno
+  layoutStops();
+  st.wrap.querySelector('input').focus();
+}
+async function askNoReturn() {
+  const ok = await confirmDialog('Sei sicuro di non voler cercare un volo di ritorno?', 'Sì, niente ritorno', 'No, tienilo');
+  if (!ok) return;
+  const d = curDates(); d.pop(); pendingDates = d;
+  retOn = false;
+  dropRetBox();
+  layoutStops();
+}
+function restoreReturn() {
+  const d = curDates(); d.push(''); pendingDates = d;
+  retOn = true;
+  if (stops.length >= 3) ensureRetBox(stops[0].field.codes.slice());
+  layoutStops();
+}
+
 function layoutStops() {
   const box = $('#stops');
-  // ricostruisci l'ordine: stop, separatore, stop, ...
   box.querySelectorAll('.stop-sep').forEach(n => n.remove());
   stops.forEach((st, i) => {
-    st.field.setLabel(stopLabel(i));
+    st.field.setLabel(i === 0 ? 'Da' : i === 1 ? 'A' : 'Poi verso');
     st.field.setPlaceholder(i === 0 ? 'Città o codice (es. BRI)…' : i === 1 ? 'Città o codice (es. MXP)…' : 'Città o codice (es. TRN)…');
     st.wrap.classList.toggle('removable', i >= 2);
     box.append(st.wrap);
     if (i < stops.length - 1) {
-      const sep = i === 0 && stops.length === 2
+      box.append(i === 0 && stops.length === 2
         ? h('button', { type: 'button', class: 'icon-btn stop-sep', title: 'Inverti Da / A', 'aria-label': 'Inverti Da e A', onclick: swapFirst }, '⇄')
-        : h('span', { class: 'stop-sep arrow', 'aria-hidden': 'true' }, '→');
-      box.append(sep);
+        : h('span', { class: 'stop-sep arrow', 'aria-hidden': 'true' }, '→'));
     }
   });
-  const actions = h('div', { class: 'stop-actions' },
-    h('button', { type: 'button', class: 'add-stop', 'aria-label': 'Aggiungi tappa', disabled: stops.length >= MAX_STOPS, onclick: () => { const s = addStop([]); if (s) s.wrap.querySelector('input').focus(); } },
-      h('span', { 'aria-hidden': 'true' }, '+'), ' Aggiungi tappa'),
-    h('button', { type: 'button', class: 'add-stop home', disabled: stops.length >= MAX_STOPS || !stops[0].field.codes.length,
-      title: 'Aggiunge un ultimo volo verso gli aeroporti di partenza', 'aria-label': 'Ritorno a casa',
-      onclick: () => addStop(stops[0].field.codes.slice()) },
-      h('span', { 'aria-hidden': 'true' }, '↩'), ' Ritorno a casa'));
-  box.querySelectorAll('.stop-actions').forEach(n => n.remove());
-  box.append(actions);
+  // il + sta dopo l'ultima tappa, al posto della freccia verso il ritorno
+  box.append(h('button', { type: 'button', class: 'icon-btn stop-sep plus', title: 'Aggiungi una tappa', 'aria-label': 'Aggiungi una tappa',
+    disabled: legCount() >= MAX_LEGS, onclick: plusClicked }, '+'));
+  if (retBox) { retBox.wrap.classList.add('removable'); box.append(retBox.wrap); }
   syncDates();
   rebuildFilters();
   document.dispatchEvent(new CustomEvent('formchange'));
@@ -288,7 +339,8 @@ function swapFirst() {
 
 function syncDates() {
   const box = $('#dates');
-  const old = dateInputs.map(i => i.value);
+  const old = pendingDates || curDates();
+  pendingDates = null;
   const n = legCount();
   box.replaceChildren();
   dateInputs = [];
@@ -296,9 +348,12 @@ function syncDates() {
   for (let i = 0; i < n; i++) {
     const inp = h('input', { type: 'date', required: true, min: today });
     inp.value = old[i] || '';
-    const lab = h('label', { class: 'lab date-lab' }, h('span', { class: 'date-t', text: legName(i, stops[i].field.codes, stops[i + 1].field.codes) }), inp);
+    const head = h('span', { class: 'date-head' }, h('span', { class: 'date-t', text: legName(i) }));
+    if (isRoundTrip() && i === 1) {
+      head.append(h('button', { type: 'button', class: 'date-x', title: 'Nessun volo di ritorno', 'aria-label': 'Nessun volo di ritorno', onclick: e => { e.preventDefault(); askNoReturn(); } }, '×'));
+    }
+    const lab = h('label', { class: 'lab date-lab' }, head, inp);
     inp.addEventListener('change', () => {
-      // le date successive non possono essere prima di questa
       for (let j = i + 1; j < dateInputs.length; j++) {
         dateInputs[j].min = inp.value || today;
         if (dateInputs[j].value && inp.value && dateInputs[j].value < inp.value) dateInputs[j].value = inp.value;
@@ -307,12 +362,15 @@ function syncDates() {
     dateInputs.push(inp);
     box.append(lab);
   }
+  if (!retOn) {
+    box.append(h('div', { class: 'no-ret' },
+      h('span', { class: 'hint', text: stops.length === 2 ? 'Solo andata' : 'Senza ritorno' }),
+      h('button', { type: 'button', class: 'add-ret', onclick: restoreReturn }, '↩ Aggiungi ritorno')));
+  }
   for (let j = 1; j < dateInputs.length; j++) dateInputs[j].min = dateInputs[j - 1].value || today;
 }
 function refreshDateLabels() {
-  $('#dates').querySelectorAll('.date-t').forEach((t, i) => {
-    if (stops[i + 1]) t.textContent = legName(i, stops[i].field.codes, stops[i + 1].field.codes);
-  });
+  $('#dates').querySelectorAll('.date-t').forEach((t, i) => { t.textContent = legName(i); });
 }
 
 function rebuildFilters() {
@@ -323,7 +381,7 @@ function rebuildFilters() {
   tabs.replaceChildren(); panels.replaceChildren();
   const n = Math.max(1, legCount());
   for (let i = 0; i < n; i++) {
-    const title = stops[i + 1] ? legName(i, stops[i].field.codes, stops[i + 1].field.codes) : `Volo ${i + 1}`;
+    const title = legName(i);
     tabs.append(h('button', { type: 'button', class: 'tab', 'data-tab': String(i), role: 'tab' }, title.split(' · ')[0]));
     panels.append(filterPanel(String(i), title));
   }
@@ -340,35 +398,68 @@ function selectTab(k) {
   document.querySelectorAll('#fpanels .fpanel').forEach(p => p.classList.toggle('active', p.dataset.panel === k));
 }
 
+/* finestra di conferma */
+function confirmDialog(message, yes, no) {
+  return new Promise(resolve => {
+    const dlg = h('dialog', { class: 'confirm' },
+      h('p', { text: message }),
+      h('div', { class: 'confirm-actions' },
+        h('button', { type: 'button', class: 'btn', value: 'no' }, no || 'Annulla'),
+        h('button', { type: 'button', class: 'btn fill', value: 'yes' }, yes || 'Conferma')));
+    document.body.append(dlg);
+    let done = false;
+    const finish = v => { if (done) return; done = true; dlg.close(); dlg.remove(); resolve(v); };
+    dlg.addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (b) finish(b.value === 'yes');
+      else if (e.target === dlg) finish(false); // clic fuori
+    });
+    dlg.addEventListener('cancel', e => { e.preventDefault(); finish(false); });
+    if (typeof dlg.showModal === 'function') { dlg.showModal(); dlg.querySelector('[value=no]').focus(); }
+    else finish(window.confirm(message));
+  });
+}
+
 function collectForm() {
   const filters = {};
   document.querySelectorAll('[data-f]').forEach(e => { filters[e.dataset.f] = e.type === 'checkbox' ? e.checked : e.value; });
   return {
-    v: 2,
+    v: 3,
     stops: stops.map(s => s.field.codes.slice()),
+    ret: { on: retOn, codes: retBox ? retBox.field.codes.slice() : null },
+    legs: legsCodes().map(([a, b]) => [a.slice(), b.slice()]),
     dates: dateInputs.map(i => i.value),
     flex: el.flex.value, adults: el.adults.value, minhours: el.minhours.value,
     filters,
   };
 }
 function migrateForm(s) {
-  // vecchio formato (Da/A + data ritorno) -> catena di tappe
-  if (!s || typeof s !== 'object' || s.v === 2) return s;
-  const st = [s.from || [], s.to || []];
-  const dates = [s.depart || ''];
-  if (!s.oneway && s.ret) {
-    st.push((s.rto && s.rto.length) ? s.rto : (s.from || []));
-    dates.push(s.ret);
+  if (!s || typeof s !== 'object' || s.v === 3) return s;
+  if (s.v !== 2) {
+    // formato originale (Da/A + data ritorno)
+    const filters = {};
+    Object.entries(s.filters || {}).forEach(([k, v]) => { filters[k.replace(/^o\./, '0.').replace(/^i\./, '1.')] = v; });
+    const round = !s.oneway && !!s.ret;
+    return { v: 3, stops: [s.from || [], s.to || []], ret: { on: round, codes: null }, dates: [s.depart || '', round ? s.ret : ''],
+      flex: s.flex, adults: s.adults, minhours: s.minhours, filters };
   }
-  const filters = {};
-  Object.entries(s.filters || {}).forEach(([k, v]) => { filters[k.replace(/^o\./, '0.').replace(/^i\./, '1.')] = v; });
-  return { v: 2, stops: st, dates, flex: s.flex, adults: s.adults, minhours: s.minhours, filters };
+  // v2: catena esplicita; se l'ultima casella torna agli aeroporti di partenza è il ritorno
+  const st = s.stops || [];
+  const first = st[0] || [], last = st[st.length - 1] || [];
+  const back = st.length >= 3 && last.length && last.every(c => first.includes(c));
+  if (back) {
+    const body = st.slice(0, -1);
+    return Object.assign({}, s, { v: 3, stops: body, ret: { on: true, codes: body.length === 2 ? null : last } });
+  }
+  return Object.assign({}, s, { v: 3, ret: { on: false, codes: null } });
 }
 function restoreForm(s) {
   s = migrateForm(s);
   const today = new Date().toISOString().slice(0, 10);
   const list = (s && Array.isArray(s.stops) && s.stops.length >= 2) ? s.stops : [[], []];
-  list.slice(0, MAX_STOPS).forEach(c => addStop(c, { silent: true }));
+  list.slice(0, MAX_LEGS + 1).forEach(c => addStop(c));
+  retOn = !(s && s.ret && s.ret.on === false);
+  if (retOn && stops.length >= 3) ensureRetBox((s && s.ret && s.ret.codes) || stops[0].field.codes.slice());
   layoutStops();
   if (s) {
     (s.dates || []).forEach((d, i) => { if (dateInputs[i] && d && d >= today) dateInputs[i].value = d; });
@@ -395,18 +486,17 @@ function restoreForm(s) {
 
 function estimate(s) {
   let n = 0;
-  for (let i = 0; i < s.stops.length - 1; i++) {
-    const o = s.stops[i], d = s.stops[i + 1];
+  s.legs.forEach(([o, d]) => {
     n += o.filter(x => !d.includes(x)).length * d.length + o.filter(x => d.includes(x)).length * (d.length - 1);
-  }
+  });
   return n * (2 * Number(s.flex || 0) + 1);
 }
 function updateEstimate() {
   const s = collectForm(), n = estimate(s), e = $('#estimate');
   refreshDateLabels();
-  const home = document.querySelector('.add-stop.home');
-  if (home) home.disabled = stops.length >= MAX_STOPS || !stops[0].field.codes.length;
-  if (s.stops.some(x => !x.length)) { e.textContent = 'Inserisci almeno un aeroporto in ogni casella.'; e.className = 'estimate'; return; }
+  const plus = document.querySelector('.stop-sep.plus');
+  if (plus) plus.disabled = legCount() >= MAX_LEGS;
+  if (s.legs.some(([o, d]) => !o.length || !d.length)) { e.textContent = 'Inserisci almeno un aeroporto in ogni casella.'; e.className = 'estimate'; return; }
   e.textContent = `~${n} ${n === 1 ? 'ricerca' : 'ricerche'} su Google Flights` + (n > 48 ? ' — troppe: riduci aeroporti, tappe o flessibilità.' : '');
   e.className = 'estimate' + (n > 48 ? ' warn' : '');
 }
@@ -440,13 +530,14 @@ async function onSubmit(ev) {
   const fail = m => { err.textContent = m; err.hidden = false; };
   if (!s.stops[0].length) return fail('Scegli almeno un aeroporto di partenza.');
   for (let i = 1; i < s.stops.length; i++) if (!s.stops[i].length) return fail(`Manca l'aeroporto della casella ${i + 1}: compilala o rimuovila con ×.`);
+  if (s.ret.on && s.ret.codes && !s.ret.codes.length) return fail('Manca l\'aeroporto di ritorno: compilalo o togli il ritorno con ×.');
   for (let i = 0; i < s.dates.length; i++) {
     if (!s.dates[i]) return fail(`Indica la data del volo ${i + 1}.`);
     if (i && s.dates[i] < s.dates[i - 1]) return fail(`La data del volo ${i + 1} è prima di quella del volo ${i}.`);
   }
   LS.set('psb_form', s);
   const body = {
-    legs: s.dates.map((d, i) => ({ origins: s.stops[i], destinations: s.stops[i + 1], date: d, filters: buildFilters(s, String(i)) })),
+    legs: s.legs.map(([o, d], i) => ({ origins: o, destinations: d, date: s.dates[i], filters: buildFilters(s, String(i)) })),
     flex_days: Number(s.flex) || 0,
     adults: Math.min(9, Math.max(1, parseInt(s.adults, 10) || 1)),
     min_hours_at_destination: Math.min(72, Math.max(0, parseInt(s.minhours, 10) || 0)),
