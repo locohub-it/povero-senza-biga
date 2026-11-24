@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import json
+from datetime import date
 import unicodedata
 from functools import lru_cache
 from pathlib import Path
@@ -14,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from . import auth
 from .config import settings
+from .date_prices import DatePricesError, fetch_date_prices
 from .filters import FlightFilters, parse_hhmm
 from .search import MAX_TRIP_LEGS, SearchRequest, TooManyQueries, TripLeg, run_search
 from .stays import stay_links
@@ -150,6 +153,39 @@ async def api_search(body: SearchIn):
     by = airports_by_iata()
     result["airports"] = {c: _public(by[c]) for c in codes if c in by}
     return result
+
+
+# ---------- prezzi per giorno (calendario) ----------
+
+def _codes(raw: str) -> list[str]:
+    out = []
+    for c in raw.split(","):
+        c = c.strip().upper()
+        if len(c) == 3 and c.isalpha() and c not in out:
+            out.append(c)
+    return out[:6]
+
+
+@app.get("/api/date-prices")
+async def api_date_prices(
+    origins: Annotated[str, Query(min_length=3, max_length=40)],
+    destinations: Annotated[str, Query(min_length=3, max_length=40)],
+    start: str,
+    end: str,
+    adults: int = Query(1, ge=1, le=9),
+):
+    o, d = _codes(origins), _codes(destinations)
+    if not o or not d:
+        raise HTTPException(400, "aeroporti non validi")
+    try:
+        date.fromisoformat(start); date.fromisoformat(end)
+    except ValueError:
+        raise HTTPException(400, "date non valide")
+    try:
+        prices = await asyncio.to_thread(fetch_date_prices, o, d, start, end, adults)
+    except DatePricesError as exc:
+        raise HTTPException(502, f"prezzi del calendario non disponibili: {exc}")
+    return {"prices": prices, "currency": settings.currency}
 
 
 # ---------- alloggi ----------
