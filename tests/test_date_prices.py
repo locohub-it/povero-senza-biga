@@ -33,3 +33,13 @@ def test_date_prices_upstream_error(monkeypatch):
     monkeypatch.setattr(main, "fetch_date_prices", boom)
     r = TestClient(main.app).get("/api/date-prices", params={"origins": "MXP", "destinations": "BRI", "start": "2026-12-01", "end": "2026-12-30"})
     assert r.status_code == 502
+
+
+def test_parse_calendar_response():
+    from app.date_prices import parse_calendar_response
+    inner = '[[null,[[1,2,3]],0,"x","y"],[["2026-12-01",null,[[null,25],"tok"],1],["2026-12-02",null,[[null,16],"tok"],1],["2026-12-03",null,[null,"tok"],1]]]'
+    import json
+    text = ")]}'\n\n" + json.dumps([["wrb.fr", None, inner, None, None, None, "generic"], ["di", 46], ["af.httprm", 46, "x", 1]])
+    assert parse_calendar_response(text) == {"2026-12-01": 25, "2026-12-02": 16}
+    error = ")]}'\n\n" + json.dumps([["wrb.fr", None, None, None, None, [13, None, []]]])
+    assert parse_calendar_response(error) == {}

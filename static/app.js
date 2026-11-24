@@ -212,113 +212,201 @@ const WD = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
 const priceCache = new Map(); // "ORI>DEST|YYYY-MM|adulti" -> Promise<{prices}>
 const iso = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 const todayIso = () => new Date().toISOString().slice(0, 10);
+const addMonth = (y, m, k) => { const t = y * 12 + m + k; return [Math.floor(t / 12), t % 12]; };
 
 function monthPrices(origins, dests, y, m, adults) {
-  // una richiesta copre il mese mostrato e il successivo (max 61 giorni)
+  // una richiesta copre il mese indicato e il successivo (max 61 giorni)
   const key = `${origins.join(',')}>${dests.join(',')}|${iso(y, m, 1).slice(0, 7)}|${adults}`;
   if (!priceCache.has(key)) {
     const start = iso(y, m, 1);
-    const endD = new Date(Date.UTC(y, m + 2, 0));
-    const end = endD.toISOString().slice(0, 10);
+    const end = new Date(Date.UTC(y, m + 2, 0)).toISOString().slice(0, 10);
     const q = new URLSearchParams({ origins: origins.join(','), destinations: dests.join(','), start, end, adults: String(adults) });
-    const p = api('/api/date-prices?' + q).catch(e => { priceCache.delete(key); throw e; });
-    priceCache.set(key, p);
+    priceCache.set(key, api('/api/date-prices?' + q).catch(e => { priceCache.delete(key); throw e; }));
   }
   return priceCache.get(key);
 }
+const curAdults = () => Math.min(9, Math.max(1, parseInt(el.adults.value, 10) || 1));
 
 let openPicker = null;
 function closePicker() { if (openPicker) { openPicker.remove(); openPicker = null; document.removeEventListener('mousedown', outsidePicker, true); } }
 function outsidePicker(e) { if (openPicker && !openPicker.contains(e.target) && !e.target.closest('.dp-btn')) closePicker(); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePicker(); });
 
-/* Trasforma un <input> in campo data con calendario a colori.
-   getRoute() -> [origini, destinazioni] del volo; serve per i prezzi. */
+/* griglia di un mese: restituisce { el, cells: [[data, bottone, disattivato]] } */
+function monthGrid(y, m, { min, marks, onPick }) {
+  const grid = h('div', { class: 'dp-grid' }, WD.map(w => h('span', { class: 'dp-wd', text: w })));
+  const lead = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7;
+  const days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  for (let i = 0; i < lead; i++) grid.append(h('span', { class: 'dp-pad' }));
+  const cells = [];
+  for (let d = 1; d <= days; d++) {
+    const ds = iso(y, m, d);
+    const off = ds < min;
+    const c = h('button', { type: 'button', class: 'dp-day' + (ds === todayIso() ? ' today' : '') + (marks ? marks(ds) : ''), disabled: off },
+      h('span', { class: 'dn', text: String(d) }), h('span', { class: 'dpr' }));
+    c.addEventListener('click', () => onPick(ds));
+    cells.push([ds, c, off]);
+    grid.append(c);
+  }
+  return {
+    el: h('div', { class: 'dp-month' }, h('div', { class: 'dp-mname', text: `${MONTHS[m]} ${y}` }), grid),
+    cells,
+  };
+}
+
+/* colora le celle in base ai prezzi: verde = terzo più economico, arancio = terzo più caro */
+function paintPrices(cells, prices) {
+  const vals = cells.filter(([ds, , off]) => !off && prices[ds] != null).map(([ds]) => prices[ds]).sort((a, b) => a - b);
+  if (!vals.length) return null;
+  const q = p => vals[Math.min(vals.length - 1, Math.floor(p * (vals.length - 1)))];
+  const lo = q(1 / 3), hi = q(2 / 3), minP = vals[0];
+  cells.forEach(([ds, c, off]) => {
+    const p = prices[ds];
+    if (off || p == null) return;
+    c.querySelector('.dpr').textContent = money(p);
+    c.classList.add(p <= lo ? 'cheap' : p >= hi && hi > lo ? 'pricey' : 'mid');
+    if (p === minP) c.classList.add('best');
+    c.title = `${fmtDate(ds)}: da ${money(p)}`;
+  });
+  return minP;
+}
+
+const legend = () => h('div', { class: 'dp-legend' },
+  h('span', null, h('i', { class: 'lg cheap' }), 'più economico'),
+  h('span', null, h('i', { class: 'lg mid' }), 'nella media'),
+  h('span', null, h('i', { class: 'lg pricey' }), 'più caro'));
+
+/* calendario: mostra `count` mesi da (y, m), carica i prezzi della tratta e li colora */
+function renderCalendar2(pop, { y, m, count, min, marks, onPick, route, onNav, title }) {
+  const [origins, dests] = route;
+  const canPrice = origins.length && dests.length;
+  const months = [];
+  for (let k = 0; k < count; k++) { const [yy, mm] = addMonth(y, m, k); months.push(monthGrid(yy, mm, { min, marks, onPick })); }
+  const status = h('div', { class: 'dp-status hint', text: canPrice ? 'Carico i prezzi…' : 'Inserisci gli aeroporti per vedere i prezzi per giorno.' });
+  const prevOk = iso(y, m, 1) > todayIso().slice(0, 8) + '01';
+  pop.replaceChildren(
+    title || null,
+    h('div', { class: 'dp-head' },
+      h('button', { type: 'button', class: 'dp-nav', 'aria-label': 'Mese precedente', disabled: !prevOk, onclick: () => onNav(-1) }, '‹'),
+      h('div', { class: 'dp-route hint', text: canPrice ? `${origins.join('/')} → ${dests.join('/')} · prezzi sola andata` : '' }),
+      h('button', { type: 'button', class: 'dp-nav', 'aria-label': 'Mese successivo', onclick: () => onNav(1) }, '›')),
+    h('div', { class: 'dp-months' }, months.map(x => x.el)),
+    legend(),
+    status);
+  if (!canPrice) return;
+  const token = `${y}-${m}-${origins}-${dests}`;
+  pop.dataset.token = token;
+  // ogni richiesta copre 2 mesi: bastano richieste ai mesi pari dell'intervallo
+  const reqs = [];
+  for (let k = 0; k < count; k += 2) { const [yy, mm] = addMonth(y, m, k); reqs.push(monthPrices(origins, dests, yy, mm, curAdults())); }
+  Promise.all(reqs).then(list => {
+    if (pop.dataset.token !== token || !pop.isConnected) return;
+    const prices = Object.assign({}, ...list.map(r => (r && r.prices) || {}));
+    const minP = paintPrices(months.flatMap(x => x.cells), prices);
+    const a = curAdults();
+    status.textContent = minP == null ? 'Nessun prezzo disponibile per questi mesi.'
+      : `Prezzo più basso: ${money(minP)}. Prezzi indicativi di sola andata, ${a} ${a === 1 ? 'adulto' : 'adulti'}.`;
+  }).catch(e => { if (pop.dataset.token === token) status.textContent = 'Prezzi non disponibili: ' + e.message; });
+}
+
+function openPop(wrap, pop) {
+  wrap.append(pop);
+  openPicker = pop;
+  setTimeout(() => document.addEventListener('mousedown', outsidePicker, true), 0);
+}
+function hijackValue(inp, render) {
+  const desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  Object.defineProperty(inp, 'value', { get() { return desc.get.call(inp); }, set(v) { desc.set.call(inp, v); render(); } });
+}
+const fmtFull = v => fmtDate(v) + ' ' + v.slice(0, 4);
+
+/* campo data singolo (sola andata, tappe) */
 function datePicker(inp, getRoute) {
   inp.type = 'hidden';
   const btn = h('button', { type: 'button', class: 'dp-btn' });
   const wrap = h('div', { class: 'dp' }, btn, inp);
-  const desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
   const render = () => {
-    const v = desc.get.call(inp);
-    btn.replaceChildren(
-      h('span', { class: 'dp-ico', 'aria-hidden': 'true' }, '📅'),
-      h('span', { class: v ? 'dp-val' : 'dp-val empty', text: v ? fmtDate(v) + ' ' + v.slice(0, 4) : 'Scegli la data' }));
+    const v = inp.value;
+    btn.replaceChildren(h('span', { class: 'dp-ico', 'aria-hidden': 'true' }, '📅'),
+      h('span', { class: v ? 'dp-val' : 'dp-val empty', text: v ? fmtFull(v) : 'Scegli la data' }));
   };
-  Object.defineProperty(inp, 'value', { get() { return desc.get.call(inp); }, set(v) { desc.set.call(inp, v); render(); } });
+  hijackValue(inp, render);
   render();
-
   btn.addEventListener('click', () => {
     if (openPicker && openPicker.dataset.owner === inp.dataset.pid) { closePicker(); return; }
     closePicker();
     const min = inp.min || todayIso();
-    const sel = inp.value;
-    const start = sel || min;
+    const start = inp.value || min;
     let y = Number(start.slice(0, 4)), m = Number(start.slice(5, 7)) - 1;
     const pop = h('div', { class: 'dp-pop', role: 'dialog', 'aria-label': 'Scegli la data' });
     pop.dataset.owner = inp.dataset.pid;
-    const [origins, dests] = getRoute();
-    const canPrice = origins.length && dests.length;
-    const adults = Math.min(9, Math.max(1, parseInt(el.adults.value, 10) || 1));
+    const draw = () => renderCalendar2(pop, {
+      y, m, count: 1, min, route: getRoute(),
+      marks: ds => ds === inp.value ? ' sel' : '',
+      onPick: ds => { inp.value = ds; inp.dispatchEvent(new Event('change', { bubbles: true })); closePicker(); },
+      onNav: k => { [y, m] = addMonth(y, m, k); draw(); },
+    });
+    draw();
+    openPop(wrap, pop);
+  });
+  return wrap;
+}
 
+/* calendario grande andata + ritorno (solo A/R semplice):
+   primo clic = andata (colori dei prezzi di andata), secondo clic = ritorno (colori del ritorno) */
+function rangePicker(inpOut, inpRet, getRouteOut, getRouteRet) {
+  inpOut.type = 'hidden'; inpRet.type = 'hidden';
+  const btn = h('button', { type: 'button', class: 'dp-btn dp-range-btn' });
+  const wrap = h('div', { class: 'dp' }, btn, inpOut, inpRet);
+  const render = () => {
+    const a = inpOut.value, b = inpRet.value;
+    btn.replaceChildren(h('span', { class: 'dp-ico', 'aria-hidden': 'true' }, '📅'),
+      h('span', { class: a ? 'dp-val' : 'dp-val empty', text: a ? fmtFull(a) : 'Andata' }),
+      h('span', { class: 'dp-arrow', 'aria-hidden': 'true' }, '→'),
+      h('span', { class: b ? 'dp-val' : 'dp-val empty', text: b ? fmtFull(b) : 'Ritorno' }));
+  };
+  hijackValue(inpOut, render); hijackValue(inpRet, render);
+  render();
+  btn.addEventListener('click', () => {
+    if (openPicker && openPicker.dataset.owner === 'range') { closePicker(); return; }
+    closePicker();
+    const today = todayIso();
+    let phase = inpOut.value ? 'ret' : 'out';
+    const start = inpOut.value || today;
+    let y = Number(start.slice(0, 4)), m = Number(start.slice(5, 7)) - 1;
+    const count = window.innerWidth >= 760 ? 2 : 1;
+    const pop = h('div', { class: 'dp-pop dp-big', role: 'dialog', 'aria-label': 'Scegli andata e ritorno' });
+    pop.dataset.owner = 'range';
+    const fire = inp => inp.dispatchEvent(new Event('change', { bubbles: true }));
     const draw = () => {
-      const grid = h('div', { class: 'dp-grid' }, WD.map(w => h('span', { class: 'dp-wd', text: w })));
-      const first = new Date(Date.UTC(y, m, 1));
-      const lead = (first.getUTCDay() + 6) % 7;
-      const days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
-      for (let i = 0; i < lead; i++) grid.append(h('span', { class: 'dp-pad' }));
-      const cells = [];
-      for (let d = 1; d <= days; d++) {
-        const ds = iso(y, m, d);
-        const off = ds < min;
-        const c = h('button', { type: 'button', class: 'dp-day' + (ds === sel ? ' sel' : '') + (ds === todayIso() ? ' today' : ''), disabled: off },
-          h('span', { class: 'dn', text: String(d) }), h('span', { class: 'dpr' }));
-        c.addEventListener('click', () => {
-          inp.value = ds;
-          inp.dispatchEvent(new Event('change', { bubbles: true }));
-          closePicker();
-        });
-        cells.push([ds, c, off]);
-        grid.append(c);
-      }
-      const status = h('div', { class: 'dp-status hint', text: canPrice ? 'Carico i prezzi…' : 'Inserisci gli aeroporti per vedere i prezzi per giorno.' });
-      pop.replaceChildren(
-        h('div', { class: 'dp-head' },
-          h('button', { type: 'button', class: 'dp-nav', 'aria-label': 'Mese precedente', disabled: iso(y, m, 1) <= todayIso().slice(0, 8) + '01', onclick: () => { m--; if (m < 0) { m = 11; y--; } draw(); } }, '‹'),
-          h('strong', { text: `${MONTHS[m]} ${y}` }),
-          h('button', { type: 'button', class: 'dp-nav', 'aria-label': 'Mese successivo', onclick: () => { m++; if (m > 11) { m = 0; y++; } draw(); } }, '›')),
-        h('div', { class: 'dp-route hint', text: canPrice ? `${origins.join('/')} → ${dests.join('/')} · sola andata` : '' }),
-        grid,
-        h('div', { class: 'dp-legend' },
-          h('span', null, h('i', { class: 'lg cheap' }), 'più economico'),
-          h('span', null, h('i', { class: 'lg mid' }), 'nella media'),
-          h('span', null, h('i', { class: 'lg pricey' }), 'più caro')),
-        status);
-      if (!canPrice) return;
-      const my = `${y}-${m}`;
-      pop.dataset.month = my;
-      monthPrices(origins, dests, y, m, adults).then(res => {
-        if (pop.dataset.month !== my || !pop.isConnected) return;
-        const prices = (res && res.prices) || {};
-        const vals = cells.filter(([ds, , off]) => !off && prices[ds] != null).map(([ds]) => prices[ds]).sort((a, b) => a - b);
-        if (!vals.length) { status.textContent = 'Nessun prezzo disponibile per questo mese.'; return; }
-        const q = p => vals[Math.min(vals.length - 1, Math.floor(p * (vals.length - 1)))];
-        const lo = q(1 / 3), hi = q(2 / 3), minP = vals[0];
-        cells.forEach(([ds, c, off]) => {
-          const p = prices[ds];
-          if (off || p == null) return;
-          c.querySelector('.dpr').textContent = money(p);
-          c.classList.add(p <= lo ? 'cheap' : p >= hi && hi > lo ? 'pricey' : 'mid');
-          if (p === minP) c.classList.add('best');
-          c.title = `${fmtDate(ds)}: da ${money(p)}`;
-        });
-        status.textContent = `Prezzo più basso del mese: ${money(minP)}. Prezzi indicativi per 1 volo di sola andata, ${adults} ${adults === 1 ? 'adulto' : 'adulti'}.`;
-      }).catch(e => { if (pop.dataset.month === my) status.textContent = 'Prezzi non disponibili: ' + e.message; });
+      const out = inpOut.value, ret = inpRet.value;
+      const steps = h('div', { class: 'dp-steps' },
+        h('button', { type: 'button', class: 'dp-step' + (phase === 'out' ? ' on' : ''), onclick: () => { phase = 'out'; draw(); } },
+          h('small', { text: '1 · Andata' }), h('b', { text: out ? fmtFull(out) : 'scegli il giorno' })),
+        h('button', { type: 'button', class: 'dp-step' + (phase === 'ret' ? ' on' : ''), disabled: !out, onclick: () => { phase = 'ret'; draw(); } },
+          h('small', { text: '2 · Ritorno' }), h('b', { text: ret ? fmtFull(ret) : 'scegli il giorno' })));
+      renderCalendar2(pop, {
+        y, m, count, title: steps,
+        min: phase === 'ret' && out ? out : today,
+        route: phase === 'out' ? getRouteOut() : getRouteRet(),
+        marks: ds => (ds === out ? ' sel out' : '') + (ds === ret ? ' sel ret' : '') + (out && ret && ds > out && ds < ret ? ' inrange' : ''),
+        onPick: ds => {
+          if (phase === 'out') {
+            inpOut.value = ds; fire(inpOut);
+            if (inpRet.value && inpRet.value < ds) { inpRet.value = ''; fire(inpRet); }
+            phase = 'ret';
+            [y, m] = [Number(ds.slice(0, 4)), Number(ds.slice(5, 7)) - 1]; // mostra dal mese dell'andata
+            draw();
+          } else {
+            inpRet.value = ds; fire(inpRet);
+            closePicker();
+          }
+        },
+        onNav: k => { [y, m] = addMonth(y, m, k); draw(); },
+      });
     };
     draw();
-    wrap.append(pop);
-    openPicker = pop;
-    setTimeout(() => document.addEventListener('mousedown', outsidePicker, true), 0);
+    openPop(wrap, pop);
   });
   return wrap;
 }
@@ -463,13 +551,21 @@ function syncDates() {
   box.replaceChildren();
   dateInputs = [];
   const today = new Date().toISOString().slice(0, 10);
+  if (isRoundTrip()) {
+    // andata e ritorno semplice: un solo calendario grande per le due date
+    const inpOut = h('input', { type: 'hidden', min: today }), inpRet = h('input', { type: 'hidden', min: today });
+    inpOut.value = old[0] || ''; inpRet.value = old[1] || '';
+    const head = h('span', { class: 'date-head' }, h('span', { class: 'date-t', text: rangeName() }),
+      h('button', { type: 'button', class: 'date-x', title: 'Nessun volo di ritorno', 'aria-label': 'Nessun volo di ritorno', onclick: e => { e.preventDefault(); askNoReturn(); } }, '×'));
+    dateInputs = [inpOut, inpRet];
+    box.append(h('div', { class: 'lab date-lab date-range' }, head,
+      rangePicker(inpOut, inpRet, () => legsCodes()[0] || [[], []], () => legsCodes()[1] || [[], []])));
+    return;
+  }
   for (let i = 0; i < n; i++) {
     const inp = h('input', { type: 'date', required: true, min: today });
     inp.value = old[i] || '';
     const head = h('span', { class: 'date-head' }, h('span', { class: 'date-t', text: legName(i) }));
-    if (isRoundTrip() && i === 1) {
-      head.append(h('button', { type: 'button', class: 'date-x', title: 'Nessun volo di ritorno', 'aria-label': 'Nessun volo di ritorno', onclick: e => { e.preventDefault(); askNoReturn(); } }, '×'));
-    }
     inp.dataset.pid = 'd' + i;
     const legIdx = i;
     const lab = h('div', { class: 'lab date-lab' }, head, datePicker(inp, () => legsCodes()[legIdx] || [[], []]));
@@ -489,7 +585,12 @@ function syncDates() {
   }
   for (let j = 1; j < dateInputs.length; j++) dateInputs[j].min = dateInputs[j - 1].value || today;
 }
+function rangeName() {
+  const [o, d] = legsCodes()[0] || [[], []];
+  return `Andata e ritorno · ${o.length ? o.join('/') : '…'} ⇄ ${d.length ? d.join('/') : '…'}`;
+}
 function refreshDateLabels() {
+  if (isRoundTrip()) { const t = $('#dates .date-t'); if (t) t.textContent = rangeName(); return; }
   $('#dates').querySelectorAll('.date-t').forEach((t, i) => { t.textContent = legName(i); });
 }
 
@@ -549,7 +650,7 @@ function collectForm() {
     ret: { on: retOn, codes: retBox ? retBox.field.codes.slice() : null },
     legs: legsCodes().map(([a, b]) => [a.slice(), b.slice()]),
     dates: dateInputs.map(i => i.value),
-    flex: el.flex.value, adults: el.adults.value, minhours: el.minhours.value,
+    adults: el.adults.value, minhours: el.minhours.value,
     filters,
   };
 }
@@ -587,7 +688,6 @@ function restoreForm(s) {
       dateInputs[j].min = dateInputs[j - 1].value || today;
       if (dateInputs[j].value && dateInputs[j].value < dateInputs[j].min) dateInputs[j].value = '';
     }
-    if (s.flex != null) el.flex.value = s.flex;
     if (s.adults) el.adults.value = s.adults;
     if (s.minhours != null && s.minhours !== '') el.minhours.value = s.minhours;
     if (s.filters) {
@@ -609,7 +709,7 @@ function estimate(s) {
   s.legs.forEach(([o, d]) => {
     n += o.filter(x => !d.includes(x)).length * d.length + o.filter(x => d.includes(x)).length * (d.length - 1);
   });
-  return n * (2 * Number(s.flex || 0) + 1);
+  return n;
 }
 function updateEstimate() {
   const s = collectForm(), n = estimate(s), e = $('#estimate');
@@ -617,7 +717,7 @@ function updateEstimate() {
   const plus = document.querySelector('.stop-sep.plus');
   if (plus) plus.disabled = legCount() >= MAX_LEGS;
   if (s.legs.some(([o, d]) => !o.length || !d.length)) { e.textContent = 'Inserisci almeno un aeroporto in ogni casella.'; e.className = 'estimate'; return; }
-  e.textContent = `~${n} ${n === 1 ? 'ricerca' : 'ricerche'} su Google Flights` + (n > 48 ? ' — troppe: riduci aeroporti, tappe o flessibilità.' : '');
+  e.textContent = `~${n} ${n === 1 ? 'ricerca' : 'ricerche'} su Google Flights` + (n > 48 ? ' — troppe: riduci aeroporti o tappe.' : '');
   e.className = 'estimate' + (n > 48 ? ' warn' : '');
 }
 
@@ -658,7 +758,7 @@ async function onSubmit(ev) {
   LS.set('psb_form', s);
   const body = {
     legs: s.legs.map(([o, d], i) => ({ origins: o, destinations: d, date: s.dates[i], filters: buildFilters(s, String(i)) })),
-    flex_days: Number(s.flex) || 0,
+    flex_days: 0,
     adults: Math.min(9, Math.max(1, parseInt(s.adults, 10) || 1)),
     min_hours_at_destination: Math.min(72, Math.max(0, parseInt(s.minhours, 10) || 0)),
   };
@@ -954,7 +1054,6 @@ function renderResults(data, req) {
   if (n > 1) root.append(renderCombos(data, req, thr));
   const calendar = renderCalendar(data, req, lists);
   if (calendar) root.append(calendar);
-  else if (!req.flex_days) root.append(h('p', { class: 'hint', text: 'Suggerimento: imposta la flessibilità a ± 1–3 giorni per vedere il grafico dei prezzi per giorno.' }));
   data.legs.forEach((l, i) => {
     if (!l.itineraries.length && !l.found) {
       root.append(h('div', { class: 'msg warn' }, `${legTitle(req, i)}: nessun volo trovato. Se gli aeroporti sono vicini conviene treno o bus.`));
@@ -984,7 +1083,7 @@ function renderResults(data, req) {
 
 /* ---------- init ---------- */
 function init() {
-  ['flex', 'adults', 'minhours'].forEach(id => { el[id] = $('#' + id); });
+  ['adults', 'minhours'].forEach(id => { el[id] = $('#' + id); });
   $('#ftabs').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t) selectTab(t.dataset.tab); });
 
   restoreForm(LS.get('psb_form', null));
