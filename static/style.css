@@ -512,3 +512,5 @@ dialog.confirm p { margin: 0 0 18px; font-size: 1.02rem; font-weight: 600; }
 .hotel-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .hotel-foot .hint { flex: 1 1 200px; }
 .stay-more { font-size: .78rem; color: var(--muted); margin-top: 12px; }
+.hotel-dist { font-size: .74rem; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hotel-sort { margin: 2px 0 8px; }

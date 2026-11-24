@@ -815,7 +815,7 @@ function itineraryRow(it, thr, data, guests) {
     const seg = it.segments.find(sg => sg.destination === l.airport);
     const cin = dateOf(seg ? seg.arrival : it.departure);
     const info = airportInfo(data, l.airport);
-    slot.append(stayPanel({ city: l.city || info.city, country: info.country, checkin: cin, checkout: addDays(cin, 1), guests, inner: true }));
+    slot.append(stayPanel({ city: l.city || info.city, country: info.country, checkin: cin, checkout: addDays(cin, 1), guests, inner: true, airport: info }));
   };
   const sum = h('summary', null,
     h('div', { class: 'it-price', text: money(it.price) }),
@@ -978,19 +978,27 @@ function priceStrip(tag, days, onPick) {
 
 /* ---------- alloggi ---------- */
 function getBudget() { const b = Number(LS.get('psb_budget', 40)); return b >= 1 ? b : 40; }
-function hotelCard(x, nights) {
+function kmBetween(lat1, lon1, lat2, lon2) {
+  const r = Math.PI / 180, R = 6371;
+  const a = Math.sin((lat2 - lat1) * r / 2) ** 2 + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin((lon2 - lon1) * r / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+const fmtKm = km => km < 10 ? km.toFixed(1).replace('.', ',') + ' km' : Math.round(km) + ' km';
+
+function hotelCard(x, nights, airport) {
   const meta = [x.type, x.rating ? `★ ${String(x.rating).replace('.', ',')}${x.reviews ? ` (${x.reviews})` : ''}` : null].filter(Boolean).join(' · ');
   return h('a', { class: 'hotel', href: x.url, target: '_blank', rel: 'noopener noreferrer', title: x.description || x.name },
     x.image ? h('img', { src: x.image, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }) : h('span', { class: 'hotel-noimg', 'aria-hidden': 'true' }, '🛏'),
     h('span', { class: 'hotel-body' },
       h('b', { class: 'hotel-name', text: x.name }),
-      meta ? h('span', { class: 'hotel-meta', text: meta }) : null),
+      meta ? h('span', { class: 'hotel-meta', text: meta }) : null,
+      x.km != null ? h('span', { class: 'hotel-dist', text: `✈ ${fmtKm(x.km)} da ${(airport && airport.iata) || "aeroporto"}`, title: "Distanza in linea d'aria dall'aeroporto" }) : null),
     h('span', { class: 'hotel-price' },
       h('strong', { text: money(x.price) }), h('small', { text: 'a notte' }),
       x.total ? h('small', { text: `${money(x.total)} per ${nights} ${nights === 1 ? 'notte' : 'notti'}` }) : null));
 }
 
-function stayPanel({ city, country, checkin, checkout, guests, inner, title }) {
+function stayPanel({ city, country, checkin, checkout, guests, inner, title, airport }) {
   const box = h('div', { class: 'stay-links' });
   const hotels = h('div', { class: 'hotels' });
   const budget = h('input', { type: 'number', min: 1, max: 1000, value: getBudget(), inputmode: 'numeric', 'aria-label': 'Budget per notte' });
@@ -1005,7 +1013,8 @@ function stayPanel({ city, country, checkin, checkout, guests, inner, title }) {
     box);
   let seq = 0;
   // prezzi reali da Google Hotels: caricati una volta, filtrati per budget qui
-  let hotelData = null, showAll = false;
+  let hotelData = null, showAll = false, sortBy = 'price';
+  const hasAirport = airport && typeof airport.lat === 'number' && typeof airport.lon === 'number';
   function renderHotels() {
     hotels.replaceChildren();
     if (hotelData === null) { hotels.append(h('span', { class: 'hint', text: 'Cerco i prezzi degli alloggi…' })); return; }
@@ -1013,13 +1022,22 @@ function stayPanel({ city, country, checkin, checkout, guests, inner, title }) {
     const all = hotelData.items || [];
     if (!all.length) { hotels.append(h('span', { class: 'hint', text: 'Nessun prezzo trovato per queste date.' })); return; }
     const max = parseInt(budget.value, 10) || 40;
-    const within = all.filter(x => x.price <= max);
-    let list = within.length ? within : all.slice(0, 3);
+    if (hasAirport) all.forEach(x => { if (x.km == null && typeof x.lat === 'number') x.km = kmBetween(airport.lat, airport.lon, x.lat, x.lon); });
+    const cmp = sortBy === 'dist' ? (a, b) => (a.km ?? 1e9) - (b.km ?? 1e9) || a.price - b.price : (a, b) => a.price - b.price;
+    const within = all.filter(x => x.price <= max).sort(cmp);
+    if (hasAirport) {
+      const nearest = Math.min(...all.map(x => x.km ?? 1e9));
+      hotels.append(h('div', { class: 'sort hotel-sort' }, 'Ordina:',
+        ...[['price', 'Più economici'], ['dist', `Più vicini all'aeroporto ${airport.iata || ''}`]].map(([k, label]) =>
+          h('button', { type: 'button', class: k === sortBy ? 'on' : '', onclick: () => { sortBy = k; renderHotels(); } }, label)),
+        nearest > 15 && nearest < 1e9 ? h('span', { class: 'hint', text: `· la struttura più vicina è a ${fmtKm(nearest)}: l'aeroporto è fuori città` }) : null));
+    }
+    let list = within.length ? within : all.slice().sort((a, b) => a.price - b.price).slice(0, 3);
     if (within.length === 0) hotels.append(h('p', { class: 'hint', text: `Nessuna struttura sotto ${money(max)} a notte: ecco le più economiche.` }));
     const limit = 6;
     const extra = list.length > limit && !showAll;
     if (extra) list = list.slice(0, limit);
-    hotels.append(h('div', { class: 'hotel-list' }, list.map(x => hotelCard(x, hotelData.nights || nights))));
+    hotels.append(h('div', { class: 'hotel-list' }, list.map(x => hotelCard(x, hotelData.nights || nights, hasAirport ? airport : null))));
     const foot = h('div', { class: 'hotel-foot' },
       h('span', { class: 'hint', text: `${within.length} su ${all.length} entro il budget · prezzi Google Hotels, tasse incluse` }));
     if (extra) foot.append(h('button', { type: 'button', class: 'btn small', onclick: () => { showAll = true; renderHotels(); } }, `Mostra tutte (${within.length})`));
@@ -1117,7 +1135,7 @@ function renderResults(data, req) {
     l.destinations.forEach(code => {
       if (seen.has(code)) return; seen.add(code);
       const a = airportInfo(data, code);
-      stays.append(stayPanel({ city: a.city, country: a.country, checkin: l.date, checkout: cout, guests: req.adults, title: `Dove dormire a ${a.city} (${code})` }));
+      stays.append(stayPanel({ city: a.city, country: a.country, checkin: l.date, checkout: cout, guests: req.adults, title: `Dove dormire a ${a.city} (${code})`, airport: a }));
     });
   });
   stays.append(h('p', { class: 'hint', text: 'Per gli scali lunghi usa il pulsante «Dove dormire» accanto al badge «città gratis».' }));
