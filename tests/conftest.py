@@ -27,3 +27,10 @@ def payload_bri_bcn():
 @pytest.fixture
 def sample_search_response():
     return json.loads((FIXTURES / "sample_search_response.json").read_text(encoding="utf-8"))
+
+
+@pytest.fixture(autouse=True)
+def _no_retry_wait(monkeypatch):
+    """Nei test i nuovi tentativi non aspettano."""
+    import app.search
+    monkeypatch.setattr(app.search, "RETRY_DELAYS", (0, 0))

@@ -8,6 +8,8 @@ payload JSON della pagina e normalizziamo entrambe le liste.
 from __future__ import annotations
 
 import json
+import logging
+import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 
@@ -17,6 +19,8 @@ from selectolax.lexbor import LexborHTMLParser
 
 from .config import settings
 
+log = logging.getLogger("povero.flights")
+
 GOOGLE_FLIGHTS_URL = "https://www.google.com/travel/flights"
 # Cookie di consenso "rifiuta tutto": senza, dall'UE Google risponde con la pagina dei cookie.
 CONSENT_COOKIE = "SOCS=CAESEwgDEgk0ODE3Nzk3MjQaAmVuIAEaBgiA_LyaBg"
@@ -24,6 +28,22 @@ CONSENT_COOKIE = "SOCS=CAESEwgDEgk0ODE3Nzk3MjQaAmVuIAEaBgiA_LyaBg"
 
 class FlightSearchError(Exception):
     """Errore nella ricerca di una singola tratta."""
+
+    def __init__(self, message: str, retryable: bool = True):
+        super().__init__(message)
+        self.retryable = retryable
+
+
+def describe_unexpected_page(url: str, html: str) -> str:
+    """Spiega che pagina ha restituito Google al posto dei risultati."""
+    low = html[:200_000].lower()
+    if "/sorry/" in url or "unusual traffic" in low or "traffico insolito" in low or "recaptcha" in low:
+        return "Google ha chiesto una verifica anti-robot (troppe richieste da questo indirizzo): riprova tra qualche minuto"
+    if "consent.google" in url:
+        return "Google ha mostrato la pagina dei cookie invece dei risultati"
+    m = re.search(r"<title>(.*?)</title>", html[:20_000], re.S | re.I)
+    title = (m.group(1).strip() if m else "senza titolo")[:80]
+    return f"risposta di Google inattesa (pagina «{title}»)"
 
 
 @dataclass
@@ -177,10 +197,10 @@ def parse_payload(payload: list, *, origin: str, destination: str, date: str,
     return list(results.values())
 
 
-def extract_payload(html: str) -> list:
+def extract_payload(html: str, url: str = "") -> list:
     script = LexborHTMLParser(html).css_first(r"script.ds\:1")
     if script is None:
-        raise FlightSearchError("risposta di Google inattesa (pagina di consenso o blocco)")
+        raise FlightSearchError(describe_unexpected_page(url, html))
     js = script.text()
     data = js.split("data:", 1)[1].rsplit(",", 1)[0]
     if data.endswith("errorHasStatus: true"):
@@ -228,9 +248,15 @@ def search_one_way(origin: str, destination: str, date: str, adults: int = 1,
         res = client.get(GOOGLE_FLIGHTS_URL, params=q.params(), headers={"Cookie": CONSENT_COOKIE})
     except Exception as exc:  # errori di rete
         raise FlightSearchError(f"errore di rete: {exc}") from exc
+    if res.status_code == 429:
+        raise FlightSearchError("Google ha limitato le richieste (429): riprova tra qualche minuto")
     if res.status_code != 200:
         raise FlightSearchError(f"Google ha risposto {res.status_code}")
-    payload = extract_payload(res.text)
+    try:
+        payload = extract_payload(res.text, str(res.url))
+    except FlightSearchError as exc:
+        log.warning("ricerca %s→%s %s: %s (url %s)", origin, destination, date, exc, str(res.url)[:120])
+        raise
     if not payload:
         return []
     return parse_payload(

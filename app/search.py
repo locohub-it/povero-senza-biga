@@ -27,6 +27,7 @@ _cache = TTLCache(settings.cache_ttl_seconds)
 SearchFn = Callable[[str, str, str, int, GoogleHints], list[Itinerary]]
 
 MAX_TRIP_LEGS = 5
+RETRY_DELAYS = (2.0, 5.0)  # attese prima dei nuovi tentativi quando Google risponde male
 
 
 class TooManyQueries(ValueError):
@@ -92,14 +93,25 @@ async def _run_queries(queries: list[Query], adults: int, hints: GoogleHints, se
         cached = _cache.get(key)
         if cached is not None:
             return q, cached, None
-        async with sem:
-            await asyncio.sleep(random.uniform(0.1, 0.6))  # non martellare Google
-            try:
-                res = await asyncio.to_thread(search_fn, q.origin, q.destination, q.date, adults, hints)
-            except FlightSearchError as exc:
-                return q, None, str(exc)
-            except Exception as exc:  # parsing cambiato, ecc.
-                return q, None, f"errore imprevisto: {exc.__class__.__name__}: {exc}"
+        err = None
+        for attempt in range(len(RETRY_DELAYS) + 1):
+            async with sem:
+                await asyncio.sleep(random.uniform(0.1, 0.6))  # non martellare Google
+                try:
+                    res = await asyncio.to_thread(search_fn, q.origin, q.destination, q.date, adults, hints)
+                    err = None
+                    break
+                except FlightSearchError as exc:
+                    err = str(exc)
+                    if not getattr(exc, "retryable", True):
+                        break
+                except Exception as exc:  # parsing cambiato, ecc.
+                    err = f"errore imprevisto: {exc.__class__.__name__}: {exc}"
+                    break
+            if attempt < len(RETRY_DELAYS):
+                await asyncio.sleep(RETRY_DELAYS[attempt])  # fuori dal semaforo: le altre ricerche continuano
+        if err:
+            return q, None, err + (f" (dopo {len(RETRY_DELAYS) + 1} tentativi)" if len(RETRY_DELAYS) else "")
         _cache.set(key, res)
         return q, res, None
 
