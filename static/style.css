@@ -511,3 +511,8 @@ dialog.confirm p { margin: 0 0 18px; font-size: 1.02rem; font-weight: 600; }
 .stay-more { line-height: 1.4; }
 
 .more-btn { margin-top: 8px; width: 100%; }
+.twrap { display: flex; align-items: center; gap: 4px; }
+.twrap input { flex: 1; min-width: 0; }
+.tclear { flex: none; width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 50%; background: var(--card); color: var(--muted); font-size: 1.1rem; line-height: 1; padding: 0; cursor: pointer; }
+.tclear:hover { color: var(--bad); border-color: var(--bad); }
+.tclear[hidden] { display: none; }

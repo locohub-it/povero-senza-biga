@@ -160,7 +160,16 @@ function makeChipField(key, rootId, label, placeholder) {
 function filterPanel(dir, title) {
   const p = (n) => `${dir}.${n}`;
   const num = (n, ph, extra) => h('input', Object.assign({ type: 'number', 'data-f': p(n), min: 0, step: 'any', placeholder: ph, inputmode: 'decimal' }, extra));
-  const tm = n => h('input', { type: 'time', 'data-f': p(n) });
+  const tm = n => {
+    // gli input orario non si possono svuotare facilmente: la X li riporta a «nessun orario»
+    const inp = h('input', { type: 'time', 'data-f': p(n) });
+    const x = h('button', { type: 'button', class: 'tclear', title: 'Togli orario', 'aria-label': 'Togli orario' }, '×');
+    const sync = () => { x.hidden = !inp.value; };
+    inp.addEventListener('input', sync); inp.addEventListener('change', sync);
+    x.addEventListener('click', e => { e.preventDefault(); inp.value = ''; inp.dispatchEvent(new Event('input', { bubbles: true })); });
+    inp.syncClear = sync; sync();
+    return h('span', { class: 'twrap' }, inp, x);
+  };
   const lab = (t, el, cls) => h('label', { class: 'lab' + (cls ? ' ' + cls : '') }, t, el);
   const setv = (n, v) => { const e = $(`[data-f="${p(n)}"]`); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); };
   return h('fieldset', { class: 'fpanel', 'data-panel': dir },
@@ -586,7 +595,9 @@ function rebuildFilters() {
     if (e.type === 'checkbox') e.checked = !!saved[e.dataset.f]; else e.value = saved[e.dataset.f];
   });
   panels.classList.toggle('many', n > 2);
+  syncTimeClears();
 }
+function syncTimeClears() { document.querySelectorAll('#fpanels input[type=time]').forEach(i => i.syncClear && i.syncClear()); }
 
 /* finestra di conferma */
 function confirmDialog(message, yes, no) {
@@ -671,6 +682,7 @@ function restoreForm(s) {
         if (v === true) any = true;
       });
       if (any) $('#filters-box').open = true;
+      syncTimeClears();
     }
   }
 }
