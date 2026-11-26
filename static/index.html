@@ -64,7 +64,12 @@
     <div class="search-more">
       <details class="sub-box" id="filters-box">
         <summary>Orari, scali e prezzo</summary>
-        <div class="tabs" id="ftabs" role="tablist"></div>
+        <div class="trip-price">
+          <label class="lab"><span id="max-total-label">Prezzo massimo andata + ritorno</span>
+            <input type="number" id="max-total" min="0" step="1" inputmode="numeric" placeholder="€ totale, es. 80">
+          </label>
+          <p class="hint">Somma di tutti i voli del viaggio. Nasconde i voli e le combinazioni che lo superano.</p>
+        </div>
         <div class="fpanels" id="fpanels"></div>
       </details>
     </div>

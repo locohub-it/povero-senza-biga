@@ -125,6 +125,7 @@ class SearchIn(BaseModel):
     flex_days: int = Field(0, ge=0, le=3)
     adults: int = Field(1, ge=1, le=9)
     min_hours_at_destination: int = Field(3, ge=0, le=72)
+    max_total_price: int | None = Field(None, ge=0, description="prezzo massimo dell'intero viaggio")
 
 
 @app.post("/api/search")
@@ -138,6 +139,7 @@ async def api_search(body: SearchIn):
             flex_days=body.flex_days,
             adults=body.adults,
             min_hours_at_destination=body.min_hours_at_destination,
+            max_total_price=body.max_total_price,
         )
         result = await run_search(req)
     except TooManyQueries as exc:

@@ -322,3 +322,35 @@ def test_failed_leg_does_not_block_other_legs_in_combos():
     assert len(result["legs"][0]["itineraries"]) == 1
     assert result["legs"][1]["itineraries"] == []
     assert result["combos"] == []
+
+
+def test_max_total_price_limits_whole_trip():
+    # andata 30 o 60, ritorno 25: budget 60 → solo NAP-BCN (30) + BCN-NAP (25)
+    calls: list = []
+    prices = {("NAP", "BCN"): 30, ("BRI", "BCN"): 60, ("BCN", "NAP"): 25, ("BCN", "BRI"): 25}
+    req = round_trip(["NAP", "BRI"], ["BCN"], ["NAP", "BRI"])
+    req.max_total_price = 60
+    result = run(req, make_fake(calls, prices=prices))
+    assert result["combos"] and all(c["total"] <= 60 for c in result["combos"])
+    assert {c["total"] for c in result["combos"]} == {55}
+    assert result["stats"]["cheapest_over_budget"] is None
+
+
+def test_max_total_price_reports_cheapest_when_nothing_fits():
+    calls: list = []
+    req = round_trip(["NAP"], ["BCN"], ["NAP"])
+    req.max_total_price = 40
+    result = run(req, make_fake(calls, prices={("NAP", "BCN"): 30, ("BCN", "NAP"): 25}))
+    assert result["combos"] == []
+    assert result["stats"]["cheapest_over_budget"] == 55
+    # i singoli voli sotto il budget restano visibili
+    assert len(result["legs"][0]["itineraries"]) == 1
+
+
+def test_max_total_price_hides_flights_above_budget():
+    calls: list = []
+    req = round_trip(["NAP"], ["BCN"], ["NAP"])
+    req.max_total_price = 50
+    result = run(req, make_fake(calls, prices={("NAP", "BCN"): 70, ("BCN", "NAP"): 20}))
+    assert result["legs"][0]["itineraries"] == []
+    assert result["legs"][0]["found"] == 1

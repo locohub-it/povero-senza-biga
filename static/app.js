@@ -163,8 +163,8 @@ function filterPanel(dir, title) {
   const tm = n => h('input', { type: 'time', 'data-f': p(n) });
   const lab = (t, el, cls) => h('label', { class: 'lab' + (cls ? ' ' + cls : '') }, t, el);
   const setv = (n, v) => { const e = $(`[data-f="${p(n)}"]`); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); };
-  return h('div', { class: 'fpanel' + (dir === '0' ? ' active' : ''), 'data-panel': dir },
-    h('h3', null, title),
+  return h('fieldset', { class: 'fpanel', 'data-panel': dir },
+    h('legend', null, title),
     h('div', { class: 'fgrid' },
       lab('Partenza dalle', tm('depart_from')), lab('Partenza alle', tm('depart_to')),
       lab('Arrivo dalle', tm('arrive_from')), lab('Arrivo alle', tm('arrive_to'))),
@@ -174,7 +174,6 @@ function filterPanel(dir, title) {
     h('div', { class: 'fgrid' },
       lab('Max scali', h('select', { 'data-f': p('max_stops') },
         h('option', { value: '' }, 'qualsiasi'), h('option', { value: '0' }, '0 (solo diretti)'), h('option', { value: '1' }, '1'), h('option', { value: '2' }, '2'))),
-      lab('Max prezzo', num('max_price', '€ totale')),
       lab('Max durata (ore)', num('max_duration', 'ore')),
       lab('Max scalo (ore)', num('max_layover', 'ore')),
       lab('Min scalo (minuti)', num('min_layover', 'es. 90 per coincidenze sicure', { step: 5 }))),
@@ -567,6 +566,10 @@ function rangeName() {
   return `Andata e ritorno · ${o.length ? o.join('/') : '…'} ⇄ ${d.length ? d.join('/') : '…'}`;
 }
 function refreshDateLabels() {
+  document.querySelectorAll('#fpanels .fpanel').forEach((p, i) => { const l = p.querySelector('legend'); if (l) l.textContent = legName(i); });
+  const n = legCount();
+  $('#max-total-label').textContent = n <= 1 ? 'Prezzo massimo del volo'
+    : isRoundTrip() ? 'Prezzo massimo andata + ritorno' : "Prezzo massimo dell'intero viaggio";
   if (isRoundTrip()) { const t = $('#dates .date-t'); if (t) t.textContent = rangeName(); return; }
   $('#dates').querySelectorAll('.date-t').forEach((t, i) => { t.textContent = legName(i); });
 }
@@ -574,26 +577,15 @@ function refreshDateLabels() {
 function rebuildFilters() {
   const saved = {};
   document.querySelectorAll('[data-f]').forEach(e => { saved[e.dataset.f] = e.type === 'checkbox' ? e.checked : e.value; });
-  const tabs = $('#ftabs'), panels = $('#fpanels');
-  const activeTab = (tabs.querySelector('.tab.active') || {}).dataset;
-  tabs.replaceChildren(); panels.replaceChildren();
+  const panels = $('#fpanels');
+  panels.replaceChildren();
   const n = Math.max(1, legCount());
-  for (let i = 0; i < n; i++) {
-    const title = legName(i);
-    tabs.append(h('button', { type: 'button', class: 'tab', 'data-tab': String(i), role: 'tab' }, title.split(' · ')[0]));
-    panels.append(filterPanel(String(i), title));
-  }
+  for (let i = 0; i < n; i++) panels.append(filterPanel(String(i), legName(i)));
   document.querySelectorAll('[data-f]').forEach(e => {
     if (!(e.dataset.f in saved)) return;
     if (e.type === 'checkbox') e.checked = !!saved[e.dataset.f]; else e.value = saved[e.dataset.f];
   });
-  const want = activeTab && activeTab.tab && Number(activeTab.tab) < n ? activeTab.tab : '0';
-  selectTab(want);
-  tabs.classList.toggle('single', n === 1);
-}
-function selectTab(k) {
-  document.querySelectorAll('#ftabs .tab').forEach(x => x.classList.toggle('active', x.dataset.tab === k));
-  document.querySelectorAll('#fpanels .fpanel').forEach(p => p.classList.toggle('active', p.dataset.panel === k));
+  panels.classList.toggle('many', n > 2);
 }
 
 /* finestra di conferma */
@@ -628,6 +620,7 @@ function collectForm() {
     legs: legsCodes().map(([a, b]) => [a.slice(), b.slice()]),
     dates: dateInputs.map(i => i.value),
     adults: el.adults.value, minhours: el.minhours.value,
+    maxTotal: $('#max-total').value,
     filters,
   };
 }
@@ -667,6 +660,7 @@ function restoreForm(s) {
     }
     if (s.adults) el.adults.value = s.adults;
     if (s.minhours != null && s.minhours !== '') el.minhours.value = s.minhours;
+    if (s.maxTotal) { $('#max-total').value = s.maxTotal; $('#filters-box').open = true; }
     if (s.filters) {
       let any = false;
       document.querySelectorAll('[data-f]').forEach(e => {
@@ -711,7 +705,6 @@ function buildFilters(s, dir) {
     max_layover: numOrNull(g('max_layover'), 60),
     long_layover_only: !!g('long_only'),
     long_layover_threshold: isFinite(th) && th >= 1 ? Math.round(th * 60) : 360,
-    max_price: numOrNull(g('max_price')),
     max_duration: numOrNull(g('max_duration'), 60),
   };
 }
@@ -738,6 +731,7 @@ async function onSubmit(ev) {
     flex_days: 0,
     adults: Math.min(9, Math.max(1, parseInt(s.adults, 10) || 1)),
     min_hours_at_destination: Math.min(72, Math.max(0, parseInt(s.minhours, 10) || 0)),
+    max_total_price: parseInt(s.maxTotal, 10) > 0 ? parseInt(s.maxTotal, 10) : null,
   };
 
   busy = true;
@@ -833,25 +827,32 @@ function itineraryList(title, items, thr, data, guests) {
   const bar = h('div', { class: 'sort' }, 'Ordina:');
   const heading = h('h2');
   const dayChip = h('button', { type: 'button', class: 'day-chip', hidden: true, title: 'Mostra tutte le date' });
-  let cur = 'price', day = null;
+  const LIMIT = 6;
+  const more = h('button', { type: 'button', class: 'btn more-btn' });
+  let cur = 'price', day = null, all = false;
+  more.addEventListener('click', () => { all = !all; draw(); if (!all) sec.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
   const draw = () => {
     list.replaceChildren();
+    more.hidden = true;
     const shown = day ? items.filter(it => dateOf(it.departure) === day) : items;
     heading.textContent = `${title} (${shown.length})`;
     dayChip.hidden = !day;
     if (day) dayChip.textContent = `Solo ${fmtDate(day)} ×`;
     if (!shown.length) { list.append(h('div', { class: 'empty-state' }, 'Nessun volo trovato con questi filtri.')); return; }
     const fn = SORTS.find(s => s[0] === cur)[2];
-    shown.slice().sort(fn).forEach(it => list.append(itineraryRow(it, thr, data, guests)));
+    const sorted = shown.slice().sort(fn);
+    (all ? sorted : sorted.slice(0, LIMIT)).forEach(it => list.append(itineraryRow(it, thr, data, guests)));
+    more.hidden = sorted.length <= LIMIT;
+    more.textContent = all ? 'Mostra meno' : `Mostra tutti i ${sorted.length} voli`;
   };
-  dayChip.addEventListener('click', () => { day = null; draw(); if (sec.onDay) sec.onDay(null); });
-  sec.setDay = d => { day = d; draw(); };
+  dayChip.addEventListener('click', () => { day = null; all = false; draw(); if (sec.onDay) sec.onDay(null); });
+  sec.setDay = d => { day = d; all = false; draw(); };
   SORTS.forEach(([k, label]) => {
     const b = h('button', { type: 'button', class: k === cur ? 'on' : '' }, label);
     b.addEventListener('click', () => { cur = k; bar.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); draw(); });
     bar.append(b);
   });
-  sec.append(h('div', { class: 'sec-head' }, h('div', { class: 'sec-title-row' }, heading, dayChip), bar), list);
+  sec.append(h('div', { class: 'sec-head' }, h('div', { class: 'sec-title-row' }, heading, dayChip), bar), list, more);
   draw();
   return sec;
 }
@@ -884,6 +885,11 @@ function renderCombos(data, req, thr) {
   const sec = h('section', null, h('div', { class: 'sec-head' }, h('h2', null, round ? 'Migliori combinazioni A/R' : 'Migliori combinazioni del viaggio')));
   if (!combos.length) {
     const empty = data.legs.filter(l => !l.itineraries.length).map(l => `volo ${l.index + 1}`);
+    const st = data.stats || {};
+    if (st.max_total_price != null && st.cheapest_over_budget != null) {
+      sec.append(h('div', { class: 'empty-state' }, `Nessuna combinazione entro ${money(st.max_total_price)}: la più economica costa ${money(st.cheapest_over_budget)}. Alza il prezzo massimo o prova altre date.`));
+      return sec;
+    }
     sec.append(h('div', { class: 'empty-state' }, empty.length
       ? `Nessuna combinazione: non ci sono voli per ${empty.join(', ')}. Se gli aeroporti sono vicini (es. Malpensa–Torino) conviene treno o bus: togli quella tappa e cerca i voli separatamente.`
       : 'Nessuna combinazione compatibile: gli orari dei voli non si incastrano (prova a ridurre le «ore minime a destinazione» o a spostare le date).'));
@@ -1124,7 +1130,6 @@ function renderResults(data, req) {
 /* ---------- init ---------- */
 function init() {
   ['adults', 'minhours'].forEach(id => { el[id] = $('#' + id); });
-  $('#ftabs').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t) selectTab(t.dataset.tab); });
 
   restoreForm(LS.get('psb_form', null));
 

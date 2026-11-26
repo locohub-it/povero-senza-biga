@@ -201,19 +201,14 @@ button { cursor: pointer; }
 .sub-box { border: 1px solid var(--line); border-radius: 10px; padding: 0 14px; background: var(--card); }
 .sub-box > summary { cursor: pointer; padding: 9px 0; font-weight: 600; font-size: .9rem; }
 .sub-box[open] { padding-bottom: 10px; }
-.tabs { display: flex; gap: 4px; margin-bottom: 8px; }
-.tab { flex: 1; border: 1px solid var(--line); background: var(--bg); padding: 7px; border-radius: 8px; }
-.tab.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
-.fpanels { display: block; }
-.fpanel { display: none; }
-.fpanel.active { display: block; }
-.fpanel h3 { display: none; }
-@media (min-width: 820px) {
-  .tabs { display: none; }
-  .fpanels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .fpanel, .fpanel.active { display: block; }
-  .fpanel h3 { display: block; }
-}
+.trip-price { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--bg); margin-bottom: 12px; }
+.trip-price .lab { max-width: 320px; }
+.trip-price .hint { margin: 6px 0 0; }
+.fpanels { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+@media (min-width: 820px) { .fpanels { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1100px) { .fpanels.many { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.fpanel { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px 12px; margin: 0; min-width: 0; background: var(--bg); }
+.fpanel legend { font-weight: 700; font-size: .9rem; padding: 0 6px; margin-left: -6px; color: var(--accent); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .fgrid .full { grid-column: 1 / -1; }
 .presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
@@ -413,8 +408,6 @@ body.login { display: flex; min-height: 100vh; align-items: center; justify-cont
 @media (min-width: 720px) { .dates-row { grid-template-columns: minmax(0, 1fr) auto; } }
 .dates { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
 .date-lab .date-t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tabs.single { display: none; }
-@media (min-width: 820px) { .tabs { display: none; } }
 @media (max-width: 719px) {
   .stop-sep.arrow { flex-basis: 100%; text-align: center; font-size: 0; margin: -6px 0; }
   .stop-sep.arrow::after { content: "↓"; font-size: 1.1rem; }
@@ -516,3 +509,5 @@ dialog.confirm p { margin: 0 0 18px; font-size: 1.02rem; font-weight: 600; }
 .hotel-sort { margin: 2px 0 8px; }
 .msg.info { background: var(--accent-soft); color: var(--fg); margin: 0 0 8px; font-size: .82rem; }
 .stay-more { line-height: 1.4; }
+
+.more-btn { margin-top: 8px; width: 100%; }

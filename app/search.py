@@ -52,6 +52,7 @@ class SearchRequest:
     min_hours_at_destination: int = 3  # tempo minimo tra l'arrivo di una tappa e la partenza della successiva
     max_results: int = 60
     max_combos: int = 30
+    max_total_price: int | None = None  # prezzo massimo dell'intero viaggio (tutti i voli insieme)
 
 
 @dataclass(frozen=True)
@@ -139,24 +140,26 @@ def _dedupe(items: list[Itinerary]) -> list[Itinerary]:
 
 
 def build_chains(legs: list[list[Itinerary]], min_gap_hours: int, limit: int, pool: int = 30,
-                 beam: int = 400, adults: int = 1) -> list[dict]:
+                 beam: int = 400, adults: int = 1, max_total: int | None = None) -> list[dict]:
     """Combina un volo per ogni tappa nella sequenza più economica.
 
     Vincolo: ogni volo parte almeno `min_gap_hours` dopo l'arrivo del precedente.
     Gli aeroporti tra una tappa e l'altra possono essere diversi (es. arrivo a
     Malpensa e ripartenza da Linate): viene segnalato nel risultato.
+    Con `max_total` restano solo le sequenze che in totale non superano quel prezzo.
     """
     if len(legs) < 2 or any(not l for l in legs):
         return []
     gap = timedelta(hours=min_gap_hours)
     pools = [[i for i in leg if i.price is not None][:pool] for leg in legs]
-    chains: list[tuple[int, list[Itinerary]]] = [(it.price, [it]) for it in pools[0]]
+    within = (lambda t: True) if max_total is None else (lambda t: t <= max_total)
+    chains: list[tuple[int, list[Itinerary]]] = [(it.price, [it]) for it in pools[0] if within(it.price)]
     for nxt in pools[1:]:
         grown = []
         for total, chain in chains:
             ready = datetime.fromisoformat(chain[-1].arrival) + gap
             for it in nxt:
-                if datetime.fromisoformat(it.departure) >= ready:
+                if datetime.fromisoformat(it.departure) >= ready and within(total + it.price):
                     grown.append((total + it.price, chain + [it]))
         grown.sort(key=lambda c: c[0])
         chains = grown[:beam]
@@ -242,13 +245,26 @@ async def run_search(req: SearchRequest, search_fn: SearchFn = search_one_way) -
         for plan, (_, _, leg) in zip(plans, resolved)
     ))
 
+    budget = req.max_total_price
     filtered: list[list[Itinerary]] = []
     errors: list[dict] = []
     for (items, errs), (_, _, leg) in zip(raw, resolved):
-        filtered.append(sorted((i for i in _dedupe(items) if leg.filters.accepts(i)), key=_sort_key))
+        ok = [i for i in _dedupe(items) if leg.filters.accepts(i)]
+        if budget is not None:
+            # un volo che da solo supera il budget non può far parte del viaggio
+            ok = [i for i in ok if i.price is not None and i.price <= budget]
+        filtered.append(sorted(ok, key=_sort_key))
         errors.extend(errs)
 
-    combos = build_chains(filtered, req.min_hours_at_destination, req.max_combos, adults=req.adults)
+    combos = build_chains(filtered, req.min_hours_at_destination, req.max_combos, adults=req.adults,
+                          max_total=budget)
+    cheapest_over_budget = None
+    if budget is not None and not combos and len(filtered) > 1:
+        # nessuna combinazione nel budget: dì quanto costa la più economica (senza limite di prezzo)
+        unbounded = [sorted((i for i in _dedupe(items) if leg.filters.accepts(i)), key=_sort_key)
+                     for (items, _), (_, _, leg) in zip(raw, resolved)]
+        best = build_chains(unbounded, req.min_hours_at_destination, 1, adults=req.adults)
+        cheapest_over_budget = best[0]["total"] if best else None
 
     legs_out = []
     for idx, ((origins, dests, leg), items, (found, _)) in enumerate(zip(resolved, filtered, raw)):
@@ -275,5 +291,6 @@ async def run_search(req: SearchRequest, search_fn: SearchFn = search_one_way) -
         "legs": legs_out,
         "combos": combos,
         "errors": errors,
-        "stats": {"queries": total, "currency": settings.currency},
+        "stats": {"queries": total, "currency": settings.currency, "max_total_price": budget,
+                  "cheapest_over_budget": cheapest_over_budget},
     }
