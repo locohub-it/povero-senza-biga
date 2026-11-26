@@ -2,6 +2,8 @@
 
 Cercavoli per viaggi improvvisati ed extreme low cost: più aeroporti di partenza, più aeroporti di arrivo, andata e ritorno indipendenti.
 
+**[⬇ Scarica l'app per Windows](https://github.com/locohub-it/povero-senza-biga/releases/latest)**
+
 ## Perché
 
 I siti più famosi gestiscono male la ricerca con più aeroporti di partenza **e** di arrivo. Se vivi tra due aeroporti e vuoi andare in una regione con altri due scali comodi, finisci a fare 4 ricerche a mano e a confrontare i risultati a occhio.
@@ -10,22 +12,33 @@ Qui indichi N aeroporti di partenza e M di arrivo e l'app li incrocia tutti. And
 
 ## Funzioni
 
-- **Multi-aeroporto**: fino a 6 aeroporti di partenza e 6 di arrivo; per il ritorno si possono scegliere aeroporti diversi da quelli dell'andata (di default si usano quelli speculari).
-- **Flessibilità fino a ±3 giorni** sulle date.
-- **Filtri orari** su partenza e arrivo, separati per andata e ritorno. Esempio: "arrivo entro le 20:00" per fare il check-in. Attenzione: se imposti solo "entro le X", gli arrivi tra mezzanotte e le 05:00 vengono esclusi (altrimenti un volo che atterra alle 00:25 passerebbe come "entro le 20"). Per includerli imposta anche l'orario "dalle".
-- **Scali anche lunghissimi**: gli scali lunghi sono evidenziati come "città gratis" (una gita gratuita durante la coincidenza) e c'è il filtro "solo scali lunghi" (soglia predefinita 6 ore).
-- Scali massimi, durata minima/massima dello scalo, prezzo massimo, durata massima del viaggio.
-- Tempo minimo di permanenza a destinazione tra arrivo dell'andata e partenza del ritorno.
-- **Link agli alloggi economici** già filtrati: Hostelworld, Booking.com (ostelli, B&B, affittacamere, con budget massimo a notte), Airbnb (stanze private), Google Hotels, Couchsurfing.
-- **Gruppi di aeroporti preferiti** per rilanciare ricerche frequenti.
-- **Password condivisa** per far usare il sito agli amici.
+- **Multi-aeroporto**: fino a 6 aeroporti di partenza e 6 di arrivo, tutti incrociati in una sola ricerca. Puoi partire da un aeroporto e rientrare in un altro, anche con compagnie diverse.
+- **Viaggi a tappe**: con il **+** accanto all'arrivo aggiungi altre tappe (es. Bari → Milano → Torino → Bari).
+- **Calendario con i prezzi**: ogni giorno è colorato in verde (economico), grigio (nella media) o arancio (caro).
+- **Filtri orari** su partenza e arrivo, separati per andata e ritorno. Esempio: "arrivo entro le 20:00" per fare il check-in. Se imposti solo "entro le X", gli arrivi tra mezzanotte e le 05:00 vengono esclusi.
+- **Scali lunghi = città gratis**: gli scali lunghi sono evidenziati e c'è il filtro "solo scali lunghi" (soglia predefinita 6 ore).
+- Scali massimi, durata minima/massima dello scalo, durata massima del viaggio e **prezzo massimo dell'intero viaggio**.
+- **Migliori combinazioni** di andata e ritorno per prezzo totale, con il link per prenotarle insieme quando compagnia e aeroporti coincidono.
+- **Dove dormire**: prezzi reali di ostelli e B&B da Google Hotels, con la distanza dall'aeroporto, più link già filtrati a Hostelworld, Booking.com, Airbnb e Couchsurfing.
+- Tema **chiaro/scuro** (Catppuccin) automatico o a scelta.
+- **App per Windows** con doppio clic, oppure sito con password condivisa per gli amici.
+
+## Screenshot
+
+| Ricerca | Calendario con i prezzi |
+|---|---|
+| ![Ricerca multi-aeroporto](docs/screenshots/01-ricerca.png) | ![Calendario con i giorni economici in verde](docs/screenshots/02-calendario.png) |
+| **Migliori combinazioni A/R** | **Dove dormire** |
+| ![Combinazioni di andata e ritorno](docs/screenshots/03-combinazioni.png) | ![Alloggi economici con distanza dall'aeroporto](docs/screenshots/04-alloggi.png) |
+
+<p align="center"><img src="docs/screenshots/05-mobile.png" alt="Versione mobile, tema scuro" width="280"></p>
 
 ## Come funziona e limiti
 
 - I voli arrivano da **Google Flights** tramite la libreria open source [fast-flights](https://github.com/AWeirdDev/flights). Non è un'API ufficiale e non serve nessuna chiave. Può smettere di funzionare se Google cambia la pagina.
 - Usalo con moderazione: parallelismo e numero massimo di query per ricerca sono limitati (`MAX_CONCURRENCY`, `MAX_QUERIES`) e i risultati restano in cache 30 minuti, per non farsi bloccare da Google.
 - I prezzi sono **indicativi**: si prenota sul sito della compagnia o su Google Flights, usando il link presente in ogni risultato.
-- Gli alloggi sono **link di ricerca già filtrati**, non prezzi in tempo reale: non esistono API pubbliche gratuite per questo.
+- I prezzi degli alloggi vengono da **Google Hotels** (stesso metodo dei voli): non sono tutte le strutture disponibili, per le altre ci sono i link già filtrati.
 
 ## Avvio in locale (macOS/Linux)
 
