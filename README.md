@@ -65,6 +65,29 @@ Con `APP_PASSWORD` vuota non c'è nessun login: va bene in locale, non in rete.
 | `MAX_QUERIES` | `48` | query massime per singola ricerca |
 | `CACHE_TTL_MINUTES` | `30` | durata della cache dei risultati |
 
+## App per Windows (doppio clic)
+
+Per chi non vuole server né Docker: scarica `PoveroSenzaBiga.exe` dalla pagina
+[Releases](https://github.com/locohub-it/povero-senza-biga/releases) e aprilo con un doppio clic.
+Si apre una finestra con il sito; chiudendola si chiude tutto.
+
+- Niente password: ognuno usa la propria copia e cerca dalla propria connessione.
+- Tema chiaro/scuro come Windows (o scelto con il pulsante in alto).
+- Tema e ultima ricerca restano salvati in `%LOCALAPPDATA%\PoveroSenzaBiga`.
+- Al primo avvio Windows può mostrare «Windows ha protetto il PC» perché l'app non è firmata:
+  **Ulteriori informazioni → Esegui comunque**.
+- Serve WebView2, già presente su Windows 10 aggiornato e Windows 11.
+
+L'exe viene creato da GitHub Actions (`.github/workflows/windows-app.yml`) a ogni modifica;
+per pubblicare una nuova versione nelle Releases:
+
+```bash
+git tag v0.2.0 && git push --tags
+```
+
+Per provarlo dai sorgenti: `pip install -r desktop/requirements-desktop.txt` e
+`python desktop/launcher.py`.
+
 ## Docker
 
 ```bash

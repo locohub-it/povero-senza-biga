@@ -1,0 +1,50 @@
+name: App Windows
+
+# Crea PoveroSenzaBiga.exe a ogni modifica del codice.
+# Con un tag vX.Y.Z (es. git tag v0.1.0 && git push --tags) lo pubblica anche nelle Releases.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths-ignore: ["**.md", "scripts/**", "Dockerfile", "docker-compose.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Dipendenze
+        run: pip install -r desktop/requirements-desktop.txt
+
+      - name: Crea l'exe
+        run: pyinstaller --noconfirm desktop/PoveroSenzaBiga.spec
+
+      - name: Prova l'exe (server interno, pagine, librerie native)
+        shell: pwsh
+        run: |
+          $p = Start-Process dist\PoveroSenzaBiga.exe -ArgumentList '--selftest' -Wait -PassThru
+          Get-Content "$env:LOCALAPPDATA\PoveroSenzaBiga\povero.log" -ErrorAction SilentlyContinue
+          if ($p.ExitCode -ne 0) { throw "selftest fallito ($($p.ExitCode))" }
+          (Get-Item dist\PoveroSenzaBiga.exe).Length / 1MB
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PoveroSenzaBiga-windows
+          path: dist/PoveroSenzaBiga.exe
+
+      - name: Pubblica nella Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/PoveroSenzaBiga.exe
+          generate_release_notes: true
